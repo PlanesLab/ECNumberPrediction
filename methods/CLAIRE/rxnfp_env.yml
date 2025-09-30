@@ -1,0 +1,8 @@
+name: /scratch/jarcagniriv/ECNumberPrediction/methods/CLAIRE/Envs/rxnfp-env
+channels:
+  - defaults
+dependencies:
+  - python=3.6
+  - tmap
+  - rdkit=2020.03.3
+prefix: /scratch/jarcagniriv/ECNumberPrediction/methods/CLAIRE/Envs/rxnfp-env

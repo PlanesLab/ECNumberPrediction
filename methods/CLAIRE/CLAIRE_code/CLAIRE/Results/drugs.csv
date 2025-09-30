@@ -1,0 +1,29 @@
+reactionID,predictions
+4-asa,3.1.2;3.2.1;2.3.1;2.8.3
+5-asa (mesalazine),3.2.1;3.1.2;2.3.1;2.8.3
+5-fu,1.3.1;1.5.1;1.1.1;1.14.13
+balsalazide,1.5.1;1.4.1;1.6.2;1.7.1
+brivudine,3.1.7;4.2.3;4.2.2;3.1.3
+capecitabine,2.7.1;3.1.3;3.6.1;2.7.6
+clonazepam,1.7.1;1.1.1;1.5.1;1.6.2
+diclofenac glucuronide,3.2.1;3.1.1;3.1.2;4.2.2
+digoxin,1.14.14;1.14.13;4.99.1;5.4.4
+doxifluridine,2.7.1;3.1.3;3.6.1;2.7.6
+ezetimib glucuronide,3.3.2;3.2.1;1.13.11;3.1.1
+flunitrazepam,3.3.2;3.2.1;1.13.11;3.1.1
+gemcitabine,3.5.4;2.4.2;1.5.99;3.5.99
+hydrocortisone (cortisol),1.3.1;1.1.1;1.5.1;1.3.99
+indomethacin glucuronide,3.1.1;2.3.1;3.1.2;3.7.1
+ketoprofen glucuronide,3.1.1;2.3.1;3.1.2;3.2.2
+levodopa,4.1.1;3.7.1;2.7.11;2.2.1
+morphine 6-glucuronide,3.2.1;3.1.1;3.1.2;3.5.1
+mycophenolate-glucuronide,3.1.1;2.3.1;3.1.2;3.7.1
+nicardipine,2.3.1;3.1.1;4.1.1;1.1.1
+nitrazepam,1.7.1;1.1.1;1.5.1;1.3.1
+olsalazine,1.5.1;1.7.1;1.6.2;2.4.2
+prontosil,1.7.1;1.1.1;1.7.99;1.3.1
+regorafenib-glucuronide,3.1.3;3.6.1;3.1.1;3.1.7
+SN38-G,3.2.1;3.1.1;3.1.2;5.4.1
+sorivudine,4.2.2;3.1.7;4.3.2;3.2.2
+sulfasalazine,1.5.1;1.7.1;1.6.2;3.5.4
+trifluridine,2.4.2;2.7.7;2.4.1;3.6.1

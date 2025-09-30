@@ -1,0 +1,9 @@
+Postdata,Description
+smarts,Reaction smarts (if no external database identifier is provided).
+db,"External database source: bigg, biopath, brenda, ec, kegg, metacyc, mnx, reactome, rhea, sabiork, seed, upa."
+rxnid,Reaction identifier for the external database.
+targets,Maximum number of hits (default: 200).
+direction,Use only consensus reaction direction (default: 0).
+noMSA,Do not compute multiple sequence alignment (default: True).
+host,NCBI taxonomic id of host organism (default: 83333).
+fp,reaction similiarity fingerprint: Morgan.

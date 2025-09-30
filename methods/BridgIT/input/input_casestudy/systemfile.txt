@@ -1,0 +1,33 @@
+COMPOUNDS
+ENTRY;GENERATION;KEGG;NAME;STRINGCODE;SPECIES;INCHIKEY;SMILES;ISBIO;FORMULA;CAR
+BON;CHARGE;FILENAME;COFACTOR;DATABASE_LINKS;ENERGY;ERROR
+reactionsS
+ENTRY;KEGG;EQUATION;OPERATORS
+4-asa;;c1+c2<=>c3+c4;
+5-asa (mesalazine);;c5+c2<=>c6+c4;
+5-fu;;c7+c8<=>c9+c10;
+balsalazide;;c11+c12+c13<=>c14+c15+c16;
+brivudine;;c17<=>c18;
+capecitabine;;c19+c20<=>c21+c22;
+clonazepam;;c23+c8<=>c24+c10;
+diclofenac glucuronide;;c25+c26<=>c27+c28;
+digoxin;;c29+c30+c11+c31+c31+c31+c31+c32+c32+c32+c32<=>c33+c34;
+doxifluridine;;c35+c20<=>c36+c22;
+ezetimib glucuronide;;c37+c26<=>c38+c28;
+flunitrazepam;;c39+c8<=>c40+c10;
+gemcitabine;;c41+c26+c11<=>c42+c43;
+hydrocortisone (cortisol);;c44+c11<=>c45+c16;
+indomethacin glucuronide;;c46+c26<=>c47+c28;
+ketoprofen glucuronide;;c48+c26<=>c49+c28;
+levodopa;;c50<=>c51;
+morphine 6-glucuronide;;c52+c26<=>c53+c28;
+mycophenolate-glucuronide;;c54<=>c55;
+nicardipine;;c56<=>c57;
+nitrazepam;;c58+c8<=>c59+c10;
+olsalazine;;c60+c11+c13<=>c14+c14+c16;
+prontosil;;c61+c11+c13<=>c62+c63+c16;
+regorafenib-glucuronide;;c64+c26<=>c65+c28;
+SN38-G;;c66+c26<=>c67+c28;
+sorivudine;;c68<=>c18;
+sulfasalazine;;c69+c11+c13<=>c70+c14+c16;
+trifluridine;;c71+c20<=>c72+c73;

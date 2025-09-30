@@ -1,0 +1,6 @@
+name: /scratch/jarcagniriv/ECNumberPrediction/methods/theia/Envs/theia
+channels:
+  - defaults
+dependencies:
+  - python==3.10
+prefix: /scratch/jarcagniriv/ECNumberPrediction/methods/theia/Envs/theia

@@ -1,0 +1,9 @@
+name: /scratch/jarcagniriv/Envs/becpred_gpu
+channels:
+  - defaults
+dependencies:
+  - python=3.6
+  - rdkit=2020.03.3
+  - cudatoolkit=10.2
+  - libstdcxx-ng
+prefix: /scratch/jarcagniriv/Envs/becpred_gpu

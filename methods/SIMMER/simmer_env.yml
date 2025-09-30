@@ -1,0 +1,10 @@
+name: /scratch/jarcagniriv/ECNumberPrediction/methods/SIMMER/Envs/SIMMERenv
+channels:
+  - defaults
+dependencies:
+  - scipy
+  - rdkit
+  - numpy
+  - pandas
+  - python=3
+prefix: /scratch/jarcagniriv/ECNumberPrediction/methods/SIMMER/Envs/SIMMERenv
