@@ -23,6 +23,7 @@ python /methods/BridgIT/bridgIT_scripts/bridgit_input_drugs.py
 
 python /methods/BridgIT/bridgIT_scripts/get_results.py --bridgit_dir /methods/BridgIT/input/reduced_inputs_KEGG --input_csv /data/KEGG/kegg_reactions_current_test.csv
 / --output /results/Case1/BridgIT.csv --csv_reaction_col Reaction ID --csv_ec_col EC Number
+
 # Case Study
 
 python /methods/BridgIT/bridgIT_scripts/get_results.py --bridgit_dir /methods/BridgIT/input/input_casestudy --input_csv /data/Drugs/drug_smiles_updated.csv
