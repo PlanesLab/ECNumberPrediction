@@ -76,7 +76,7 @@ ECNumberPrediction/
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ECNumberPrediction.git
+git clone https://github.com/PlanesLab/ECNumberPrediction.git
 cd ECNumberPrediction
 ```
 Each method in the `methods/` folder may have its own installation requirements. Refer to the individual method documentation for setup instructions.
