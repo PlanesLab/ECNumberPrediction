@@ -5,7 +5,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from datetime import datetime
 
 # === File path ===
-csv_path = '/scratch/jarcagniriv/Case1/SensitivityAnalysis/merged_output.csv'
+csv_path = 'results/Case1/merged_output.csv'
 
 # === Load & Clean Data ===
 df = pd.read_csv(csv_path, dtype=str).fillna("")
@@ -125,21 +125,6 @@ for res in results:
         })
 
 results_df = pd.DataFrame(records)
-filename = "/scratch/jarcagniriv/Case1/SensitivityAnalysis/evaluation_summary.csv"
+filename = "results/Case1/evaluation_summary.csv"
 results_df.to_csv(filename, index=False)
 print(f"\n📁 Evaluation results saved to '{filename}'")
-
-# === Identify Missing Predictions Per Method ===
-missing_coverage = []
-
-for col in prediction_cols:
-    missing_ids = df[df[col + '_pred'].apply(lambda x: len(x) == 0)]['reaction_id'].tolist()
-    for rid in missing_ids:
-        missing_coverage.append({'method': col, 'reaction_id': rid})
-
-# === Save Missing Coverage Info ===
-missing_df = pd.DataFrame(missing_coverage)
-missing_filename = "/scratch/jarcagniriv/Case1/SensitivityAnalysis/missing_coverage_per_method.csv"
-missing_df.to_csv(missing_filename, index=False)
-
-print(f"📄 Reactions with missing predictions saved to '{missing_filename}'")

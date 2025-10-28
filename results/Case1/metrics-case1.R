@@ -14,7 +14,7 @@ library(scales)
 # ================================ #
 # Data Preparation
 # ================================ #
-data_eval <- read_csv("/Users/josefinaarcagni/Downloads/evaluation_summary_case1.csv")
+data_eval <- read_csv("/results/Case1/evaluation_summary.csv")
 
 # EC class names & colors
 ec_class_names <- c(
@@ -135,7 +135,7 @@ panel_b_combined <- plot_grid(panel_b_grid, legend_b,
 # ================================ #
 # Panel C
 # ================================ #
-data_topn <- read.csv("/Users/josefinaarcagni/Downloads/merged_output_kegg.csv")
+data_topn <- read.csv("/results/Case1/merged_output.csv")
 
 method_order_c <- method_order
 method_colors_c <- c(
@@ -236,62 +236,29 @@ panel_c_combined <- plot_grid(
 # ================================ #
 # Final combined plot
 # ================================ #
-final_plot_all <- (panel_a / panel_b_combined / panel_c_combined)
-
-# Save
-ggsave(
-  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/Case1/final_combined_plot_clean.png",
-  plot = final_plot_all,
-  width = 20, height = 22, dpi = 300, bg = "white"
-)
-
 
 # Convert each panel into a patchwork object
 panel_a_pw <- wrap_elements(panel_a)
 panel_b_pw <- wrap_elements(panel_b_combined)
 panel_c_pw <- wrap_elements(panel_c_combined)
 
-# Combine with patchwork and add labels
-final_plot_all <- (panel_a_pw / panel_b_pw / panel_c_pw) +
-  plot_annotation(
-    tag_levels = "A",          
-    theme = theme(
-      plot.tag = element_text(size = 130, face = "bold"),  # bigger, bold
-      plot.tag.position = c(0, 1)                          # top-left inside
-    )
-  )
-
-
-# Save
-ggsave(
-  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/Case1/final_combined_plot_clean.png",
-  plot = final_plot_all,
-  width = 20, height = 22, dpi = 300, bg = "white"
-)
 
 # Combine everything first (no labels yet)
 final_plot_all <- (panel_a_pw / panel_b_pw / panel_c_pw)
 
-# Add A/B/C manually
 final_plot_labeled <- ggdraw(final_plot_all) +
   draw_plot_label(
     label = c("A", "B", "C"),
-    x = c(0, 0, 0),     # left side of each panel
-    y = c(1, 0.68, 0.35),  # vertical positions (adjust to align)
+    x = c(0, 0, 0),   
+    y = c(1, 0.68, 0.35),  
     hjust = -0.5, vjust = 1.2,
-    size = 40,          # now this will definitely scale
+    size = 40,         
     fontface = "bold"
   )
 
-# Save
 ggsave(
-  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/Case1/final_combined_plot_clean.png",
-  plot = final_plot_labeled,
-  width = 20, height = 22, dpi = 150, bg = "white"
+  filename = "results/Case1/case1_plot.png",
+  plot = final_plot_all,
+  width = 20, height = 22, dpi = 300, bg = "white"
 )
 
-theia_recall <- perf_df %>%
-  filter(method == "Theia") %>%
-  pull(recall)
-
-theia_recall

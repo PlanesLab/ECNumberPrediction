@@ -2,183 +2,89 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import matthews_corrcoef, precision_score, recall_score
 from sklearn.preprocessing import MultiLabelBinarizer
-import math
-import warnings
+from datetime import datetime
 
-# --- Configuration ---
-CSV_PATH = '/scratch/jarcagniriv/Case2/Results/results/merged_output.csv'
-OUT_SUMMARY = '/scratch/jarcagniriv/Case2/Results/evaluation_summary.csv'
-OUT_MISSING = '/scratch/jarcagniriv/Case2/Results/missing_coverage_per_method.csv'
+# === File path ===
+csv_path = 'results/Case2/merged_output.csv'
 
-# --- Utilities for EC parsing & cleaning ---
-def is_invalid_ec_group(s: str) -> bool:
-    if not s or not s.strip():
+# === Load & Clean Data ===
+df = pd.read_csv(csv_path, dtype=str).fillna("")
+
+def is_invalid_ec_group(s):
+    if not s.strip():
         return True
-    first_group = s.split(";")[0]
-    for ec in first_group.split("|"):
-        parts = [p.strip() for p in ec.strip().split(".")]
+    for ec in s.split(";")[0].split("|"):
+        parts = ec.strip().split(".")
         if len(parts) >= 3 and all(p.isdigit() for p in parts[:3]) and parts[0] != "7":
             return False
     return True
 
-def parse_ecs_three_part(s: str) -> set:
+initial_count = len(df)
+invalid_mask = df['EC Number'].apply(is_invalid_ec_group)
+invalid_rows = df[invalid_mask]
+df = df[~invalid_mask].copy()
+filtered_count = len(df)
+
+print("❌ Eliminated rows with only class 7 or incomplete ECs:")
+print(invalid_rows[['reaction_id', 'EC Number']].to_string(index=False))
+print(f"\n🔎 Removed {initial_count - filtered_count} rows.")
+print(f"✅ Remaining valid reactions: {filtered_count}")
+
+# === Parse ECs ===
+def parse_ecs(s):
     ecs = set()
-    if not s or not s.strip():
+    if not s:
         return ecs
     first_group = s.split(";")[0]
     for ec in first_group.split("|"):
-        parts = [p.strip() for p in ec.strip().split(".")]
+        parts = ec.strip().split(".")
         if len(parts) >= 3 and all(p.isdigit() for p in parts[:3]):
             ecs.add(".".join(parts[:3]))
     return ecs
 
-# --- Top-1 helpers (levels) ---
-def get_top1_group_str(s: str) -> str:
-    if not s or not s.strip():
-        return ""
-    return s.split(";")[0].strip()
+df['true_set'] = df['EC Number'].apply(parse_ecs)
+prediction_cols = [c for c in df.columns if c not in ['reaction_id', 'EC Number', 'true_set']]
 
-def split_group_to_ecs(group_str: str) -> list:
-    if not group_str:
-        return []
-    return [ec.strip() for ec in group_str.split("|") if ec.strip()]
+# === Collect All Labels ===
+all_labels = set().union(*df['true_set'])
+for col in prediction_cols:
+    df[col + '_pred'] = df[col].apply(parse_ecs)
+    all_labels |= set().union(*df[col + '_pred'])
 
-def truncate_ec_to_level(ec: str, level: int):
-    if not ec:
-        return None
-    parts = [p.strip() for p in ec.split(".")]
-    if len(parts) < level:
-        return None
-    if not all(p.isdigit() for p in parts[:level]):
-        return None
-    return ".".join(parts[:level])
+all_labels = sorted(all_labels)
+mlb = MultiLabelBinarizer(classes=all_labels)
+mlb.fit(df['true_set'])
 
-# --- Top-1 MCC computation ---
-def compute_top1_mcc_weighted_by_label(df_local: pd.DataFrame, pred_col: str):
-    """
-    Compute weighted Top-1 MCC for levels 1..4.
-    Each truncated EC (level 1..4) is treated as a binary label, MCC computed per-label,
-    and then averaged weighted by label support.
-    """
-    results = {}
-    for level in [1, 2, 3, 4]:
-        y_true_sets = []
-        y_pred_sets = []
-        for _, row in df_local.iterrows():
-            true_group = get_top1_group_str(row['ec'])
-            true_ecs = split_group_to_ecs(true_group)
-            true_trunc = {truncate_ec_to_level(ec, level) for ec in true_ecs if truncate_ec_to_level(ec, level)}
-            y_true_sets.append(true_trunc)
+label_to_class = {label: label.split('.')[0] for label in all_labels}
 
-            pred_group = get_top1_group_str(row.get(pred_col, ""))
-            pred_ecs = split_group_to_ecs(pred_group)
-            pred_trunc = {truncate_ec_to_level(ec, level) for ec in pred_ecs if truncate_ec_to_level(ec, level)}
-            y_pred_sets.append(pred_trunc)
+# === Evaluation Function ===
+def evaluate_method(col):
+    y_true = mlb.transform(df['true_set'])
+    
+    # Penalize missing predictions (empty set means all zeros)
+    y_pred_raw = df[col + '_pred'].apply(lambda x: x if x else set())
+    y_pred = mlb.transform(y_pred_raw)
 
-        all_level_labels = set().union(*y_true_sets, *y_pred_sets) if len(y_true_sets) > 0 else set()
-        if not all_level_labels:
-            results[f"mcc_level{level}"] = np.nan
-            continue
+    mcc_list = [matthews_corrcoef(y_true[:, i], y_pred[:, i]) for i in range(len(all_labels))]
+    prec_list = precision_score(y_true, y_pred, average=None, zero_division=0)
+    rec_list = recall_score(y_true, y_pred, average=None, zero_division=0)
+    support = y_true.sum(axis=0)
 
-        all_level_labels = sorted(all_level_labels)
-        mlb_lvl = MultiLabelBinarizer(classes=all_level_labels)
-        mlb_lvl.fit(y_true_sets + y_pred_sets)
-        Y_true = mlb_lvl.transform(y_true_sets)
-        Y_pred = mlb_lvl.transform(y_pred_sets)
-
-        mcc_list = []
-        support = Y_true.sum(axis=0)
-
-        for i in range(len(all_level_labels)):
-            y_t = Y_true[:, i]
-            y_p = Y_pred[:, i]
-            try:
-                if (y_t.sum() == 0 and y_p.sum() == 0) or (y_t.sum() == len(y_t) and y_p.sum() == len(y_p)):
-                    mcc_val = 0.0
-                else:
-                    mcc_val = matthews_corrcoef(y_t, y_p)
-                    if isinstance(mcc_val, float) and math.isnan(mcc_val):
-                        mcc_val = 0.0
-            except Exception:
-                mcc_val = 0.0
-            mcc_list.append(mcc_val)
-
-        if support.sum() > 0:
-            weighted_mcc = float(np.average(mcc_list, weights=support))
-        else:
-            weighted_mcc = np.nan
-
-        results[f"mcc_level{level}"] = weighted_mcc
-
-    return results
-
-# --- Main evaluation (unchanged general MCC) ---
-def evaluate_method(df_eval: pd.DataFrame, col: str, all_labels: list, label_to_class: dict):
-    if all_labels:
-        mlb = MultiLabelBinarizer(classes=all_labels)
-        mlb.fit([])
-        Y_true = mlb.transform(df_eval['true_set'])
-    else:
-        Y_true = np.zeros((len(df_eval), 0), dtype=int)
-
-    y_pred_raw = df_eval[col + '_pred'].apply(lambda x: x if x else set())
-    if all_labels:
-        Y_pred = mlb.transform(y_pred_raw)
-    else:
-        Y_pred = np.zeros((len(df_eval), 0), dtype=int)
-
-    n_labels = Y_true.shape[1]
-    mcc_list = []
-    support = np.array([])
-
-    if n_labels > 0:
-        for i in range(n_labels):
-            y_t = Y_true[:, i]
-            y_p = Y_pred[:, i]
-            try:
-                if (y_t.sum() == 0 and y_p.sum() == 0) or (y_t.sum() == len(y_t) and y_p.sum() == len(y_p)):
-                    mcc_val = 0.0
-                else:
-                    mcc_val = matthews_corrcoef(y_t, y_p)
-                    if isinstance(mcc_val, float) and math.isnan(mcc_val):
-                        mcc_val = 0.0
-            except Exception:
-                mcc_val = 0.0
-            mcc_list.append(mcc_val)
-
-        prec_list = precision_score(Y_true, Y_pred, average=None, zero_division=0)
-        rec_list = recall_score(Y_true, Y_pred, average=None, zero_division=0)
-        support = Y_true.sum(axis=0)
-    else:
-        prec_list = np.array([])
-        rec_list = np.array([])
-
-    total_support = int(support.sum()) if support.size else 0
-    if support.size and support.sum() > 0:
-        overall_mcc = float(np.average(mcc_list, weights=support))
-        overall_prec = float(np.average(prec_list, weights=support))
-        overall_rec = float(np.average(rec_list, weights=support))
-    else:
-        overall_mcc = np.nan
-        overall_prec = np.nan
-        overall_rec = np.nan
+    overall_mcc = np.average(mcc_list, weights=support)
+    overall_prec = np.average(prec_list, weights=support)
+    overall_rec = np.average(rec_list, weights=support)
 
     class_mcc = {}
     for cls in sorted(set(label_to_class.values())):
         idx = [i for i, lbl in enumerate(all_labels) if label_to_class[lbl] == cls]
         if not idx:
             continue
-        cls_support = support[idx].sum() if support.size else 0
-        if cls_support > 0:
-            cls_mccs = [mcc_list[i] for i in idx]
-            class_mcc[cls] = float(np.average(cls_mccs, weights=support[idx]))
-        else:
-            class_mcc[cls] = np.nan
+        cls_support = support[idx].sum()
+        cls_mccs = [mcc_list[i] for i in idx]
+        class_mcc[cls] = np.average(cls_mccs, weights=support[idx]) if cls_support > 0 else np.nan
 
-    coverage = (df_eval[col + '_pred'].apply(lambda x: len(x) > 0)).mean()
-
-    # Top-1 MCC (new)
-    top1_mcc = compute_top1_mcc_weighted_by_label(df_eval, col)
+    # === Coverage: rows with at least one prediction ===
+    coverage = (df[col + '_pred'].apply(lambda x: len(x) > 0)).mean()
 
     return {
         'method': col,
@@ -186,7 +92,39 @@ def evaluate_method(df_eval: pd.DataFrame, col: str, all_labels: list, label_to_
         'overall_precision': overall_prec,
         'overall_recall': overall_rec,
         'coverage': coverage,
-        'support': total_support,
-        'class_mcc': class_mcc,
-        **top1_mcc
+        'support': int(support.sum()),
+        'class_mcc': class_mcc
     }
+
+# === Run Evaluation ===
+results = [evaluate_method(col) for col in prediction_cols]
+
+# === Display Results ===
+for res in results:
+    print(f"\nMethod: {res['method']}")
+    print(f"  • Weighted MCC:       {res['overall_mcc']:.4f}")
+    print(f"  • Weighted Precision: {res['overall_precision']:.4f}")
+    print(f"  • Weighted Recall:    {res['overall_recall']:.4f}")
+    print(f"  • Coverage:           {res['coverage']:.2%}")
+    for cls, mcc in res['class_mcc'].items():
+        print(f"    – Class {cls} MCC:  {mcc:.4f}")
+
+# === Export to CSV ===
+records = []
+for res in results:
+    for cls, mcc in res['class_mcc'].items():
+        records.append({
+            'method': res['method'],
+            'ec_class': cls,
+            'class_mcc': mcc,
+            'overall_mcc': res['overall_mcc'],
+            'overall_precision': res['overall_precision'],
+            'overall_recall': res['overall_recall'],
+            'coverage': res['coverage'],
+            'total_support': res['support']
+        })
+
+results_df = pd.DataFrame(records)
+filename = "results/Case2/evaluation_summary.csv"
+results_df.to_csv(filename, index=False)
+print(f"\n📁 Evaluation results saved to '{filename}'")

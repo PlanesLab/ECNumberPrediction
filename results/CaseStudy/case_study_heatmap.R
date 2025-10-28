@@ -16,7 +16,7 @@ library(readxl)
 library(readr)
 
 # READ DATAFRAME HERE
-merged_output <- read_csv("/Users/josefinaarcagni/Downloads/merged_output_drugs2.csv")
+merged_output <- read_csv("results/CaseStudy/merged_output.csv")
 
 # === Functions ===
 collapse_to_third_level <- function(predictions) {
@@ -312,7 +312,7 @@ print(ggarranged_combined_plot)
 
 # === Save final figure ===
 ggsave(
-  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/CaseStudy/casestudyplot3.png",    
+  filename = "results/CaseStudy/casestudyplot.png",    
   plot = ggarranged_combined_plot,            
   width = 10,                      
   height = 15,                      
@@ -320,17 +320,3 @@ ggsave(
   bg= "white"
 )
 
-# === Save Majority Vote Table (only if included) ===
-if (include_majority_vote) {
-  majority_table <- majority_preds %>%
-    select(drug, true_EC = drug_EC, 
-           majority_pred_top1 = pred_top1, 
-           majority_pred_top5 = pred_top5, 
-           top1_hit_type, 
-           top5_hit_type)
-  
-  write_csv(
-    majority_table, 
-    "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/CaseStudy/majority_vote_results3.csv"
-  )
-}

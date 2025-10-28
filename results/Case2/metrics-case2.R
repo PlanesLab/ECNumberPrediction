@@ -12,7 +12,7 @@ library(cowplot)
 # Data Preparation
 # ================================ #
 # Read evaluation summary
-data_eval <- read_csv("/Users/josefinaarcagni/Downloads/evaluation_summary_case2_metanetx.csv")
+data_eval <- read_csv("results/Case2/evaluation_summary.csv")
 
 # EC class names & colors
 ec_class_names <- c(
@@ -170,7 +170,7 @@ final_plot_labeled <- ggdraw(final_plot_ab) +
 # Save
 # ================================ #
 ggsave(
-  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/Case2/final_metanetx_plot.png",
+  filename = "results/Case2/case2_plot.png",
   plot = final_plot_labeled,
   width = 18, height = 14, dpi = 300, bg = "white"
 )
