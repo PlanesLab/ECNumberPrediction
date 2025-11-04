@@ -14,13 +14,30 @@ Specifically, we assessed the tools under three conditions:
 2. For all of the methods with avaiable source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we trained or used as prior knowledge 80% of the MetaNetX database (34.046 reactions), and then queried the methods with the remaining 20% (3.783 reactions). 
 3. We did a case study on 28 drugs and their associated enzyme-annotated degradation reactions, and used them to query against all selected methods. Additionally, we applied a Top1 and Top5 **majority voting strategy** using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred), to show the potential of combining multiple algorithms to correctly predict EC number. 
 
+### Table of Contents: 
+- [Cite](#cite)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Included Tools](#included-tools)
+  - [E-zyme / E-zyme2](#e-zyme--e-zyme2)
+  - [BridgIT](#bridgit)
+  - [SelenzymeRF](#selenzymerf)
+  - [SIMMER](#simmer)
+  - [Theia](#theia)
+  - [BEC-Pred](#bec-pred)
+  - [CLAIRE](#claire)
+- [Results](#results)
+  - [Case 1](#case-1)
+  - [Case 2](#case-2)
+  - [CaseStudy](#casestudy)
+  - [MajorityVote](#majorityvote)
+  
 For more information, please refer to:  
 
 - Josefina Arcagni: jarcagniriv@unav.es 
 - Telmo Blasco: tblasco@tecnun.es
 
 ### Table of contents: 
-
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Included Tools](#included-tools)
