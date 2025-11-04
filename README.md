@@ -31,28 +31,11 @@ Specifically, we assessed the tools under three conditions:
   - [Case 2](#case-2)
   - [CaseStudy](#casestudy)
   - [MajorityVote](#majorityvote)
-  
+
 For more information, please refer to:  
 
 - Josefina Arcagni: jarcagniriv@unav.es 
 - Telmo Blasco: tblasco@tecnun.es
-
-### Table of contents: 
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Included Tools](#included-tools)
-  - [E-zyme / E-zyme2](#e-zyme--e-zyme2)
-  - [BridgIT](#bridgit)
-  - [SelenzymeRF](#selenzymerf)
-  - [SIMMER](#simmer)
-  - [Theia](#theia)
-  - [BEC-Pred](#bec-pred)
-  - [CLAIRE](#claire)
-- [Results](#results)
-  - [Case 1](#case-1)
-  - [Case 2](#case-2)
-  - [CaseStudy](#casestudy)
-  - [MajorityVote](#majorityvote)
   
 ## Cite
 
