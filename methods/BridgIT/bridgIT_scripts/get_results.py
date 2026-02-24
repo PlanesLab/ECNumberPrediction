@@ -62,7 +62,7 @@ def process_bridgit_results(results_dir, ec_col):
 
 def process_input_csv(input_csv, reaction_col, ec_col):
     try:
-        df = pd.read_csv(input_csv)
+        df = pd.read_csv(input_csv, sep="\t")
         return df[[reaction_col, ec_col]].copy()
     except Exception as e:
         print(f"Error reading input CSV: {e}")

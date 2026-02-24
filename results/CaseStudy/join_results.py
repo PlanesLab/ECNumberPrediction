@@ -8,7 +8,7 @@ from functools import reduce
 # -------------------------------
 
 # Define the folder path and file pattern for CSV files in Query_Results
-folder_path = "results/CaseStudy/results"
+folder_path = "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/results"
 file_pattern = os.path.join(folder_path, "*.csv")
 
 # Get a list of all CSV files in the folder
@@ -61,7 +61,7 @@ merged_df = merged_df.applymap(clean_value)
 # -------------------------------
 
 # Define the KEGG CSV file path
-kegg_file = "data/Drugs/drug_smiles_updated.csv"
+kegg_file = "/scratch/jarcagniriv/ECNumberPrediction/data/Drugs/drug_smiles_updated.csv"
 
 kegg_df = pd.read_csv(kegg_file)
 
@@ -89,7 +89,7 @@ merged_df = pd.merge(merged_df, kegg_df, on="drug", how="outer")
 # -------------------------------
 
 # Define the output file path
-output_file = os.path.join(folder_path, "results/CaseStudy/merged_output.csv")
+output_file = os.path.join(folder_path, "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy?merged_output.csv")
 
 # Save the final merged and cleaned DataFrame to a CSV file
 merged_df.to_csv(output_file, index=False)

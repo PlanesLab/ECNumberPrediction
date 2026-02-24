@@ -27,7 +27,7 @@ results_all = []
 
 # --- Get all CSV files and sort by KEGG Reaction ID ---
 files = glob.glob(os.path.join(folder, "*.csv"))
-files = sorted(files, key=lambda x: int(re.search(r"R(\d+)", os.path.basename(x)).group(1)))
+files = sorted(files, key=lambda x: int(re.search(r"(\d+)", os.path.basename(x)).group(1)))
 
 for file in files:
     reaction_name = os.path.splitext(os.path.basename(file))[0]  # e.g. R07612

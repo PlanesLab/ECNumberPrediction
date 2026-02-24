@@ -4,11 +4,11 @@ import typer
 def process_reactions(
     input_path: str,
     output_path: str,
-    reaction_id_col: str = "reaction_id",
-    substrates_col: str = "substrates_products",
-    smiles_col: str = "reaction_smiles",
-    ec_col: str = "EC_number",   # <-- EC column name is now fully configurable
-    sep: str = ",",              # Separator for input file (CSV/TSV)
+    reaction_id_col: str = "ID",
+    substrates_col: str = "REACTION_SMILES",
+    smiles_col: str = "REACTION_SMILES",
+    ec_col: str = "EC_NUMBER",   
+    sep: str = "\t",              # Separator for input file (CSV/TSV)
     reaction_sep: str = ">>",    # Separator between substrates and products
     include_ec: bool = False,
 ):

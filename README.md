@@ -10,8 +10,8 @@ This repository contains the code and data used to evaluate computational tools 
 
 
 Specifically, we assessed the tools under three conditions: 
-1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — Using 20% of the KEGG 2025 database (1866 reactions). 
-2. For all of the methods with avaiable source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we trained or used as prior knowledge 80% of the MetaNetX database (34.046 reactions), and then queried the methods with the remaining 20% (3.783 reactions). 
+1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — Using 20% of the KEGG 2025 database (1866 reactions). We also evaluated these using a subset of 500 Rhea 2025 reactions.
+2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. We trained the models with the training dtaaste and tested with the test for each split.  Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
 3. We did a case study on 28 drugs and their associated enzyme-annotated degradation reactions, and used them to query against all selected methods. Additionally, we applied a Top1 and Top5 **majority voting strategy** using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred), to show the potential of combining multiple algorithms to correctly predict EC number. 
 
 ### Table of Contents: 
@@ -19,6 +19,7 @@ Specifically, we assessed the tools under three conditions:
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Included Tools](#included-tools)
+  - [SMILES Processing](#smiles-processing)
   - [E-zyme / E-zyme2](#e-zyme--e-zyme2)
   - [BridgIT](#bridgit)
   - [SelenzymeRF](#selenzymerf)
@@ -99,7 +100,79 @@ Each method in the `methods/` folder may have its own installation requirements.
 
 *The table above summarizes the tools used, detailing their year of release, type (SB: similarity-based or ML: machine learning), associated databases, key features, and availability of open-source code.*
 
-Follow the steps below for implementing each of the tools included in the `methods/` folder:
+### SMILES Processing
+
+Canonicalizes reaction SMILES using RDKit. Accepts a plain text file (one
+SMILES per line), a CSV/TSV file with a specified SMILES column, or an entire
+directory of such files.
+
+Find in `data/Preprocessing/canonicalize_rxn_SMILES.py`
+
+Each reaction SMILES is expected in the format:
+```text
+reactant1.reactant2>>product1.product2
+```
+
+Atom mapping is not assumed. Reactants and products are each sorted
+alphabetically after canonicalization to ensure a deterministic output
+regardless of input order. Invalid molecules are filtered out; invalid
+reactions are skipped with a warning.
+
+### Usage
+
+**Plain text file (one SMILES per line):**
+```bash
+python3 canonicalize_smiles.py \
+  --input  data/reaction_smiles.txt \
+  --output data/reaction_smiles_can.txt
+```
+
+**CSV file with a named SMILES column:**
+```bash
+python3 canonicalize_smiles.py \
+  --input      data/reactions.csv \
+  --output     data/reactions_can.csv \
+  --smiles_col rxn_smiles
+```
+
+**TSV file, custom output column name:**
+```bash
+python3 canonicalize_smiles.py \
+  --input      data/reactions.tsv \
+  --output     data/reactions_can.tsv \
+  --smiles_col smiles \
+  --output_col can_smiles
+```
+
+
+#### Arguments
+
+| Argument | Default | Description |
+|:---------|:--------|:------------|
+| `--input` | — | Input file or directory (required) |
+| `--output` | — | Output file or directory (required) |
+| `--smiles_col` | — | Column name containing SMILES (required for CSV/TSV) |
+| `--output_col` | `canonical_smiles` | Column name for the canonical SMILES output |
+| `--sep` | auto | Delimiter for tabular files (auto-detected from `.csv`/`.tsv` extension) |
+| `--keep_failed` | off | Keep rows where canonicalization failed (written as empty) |
+| `--extension` | `.txt` | File extension filter when processing a directory |
+
+
+####  Output
+
+For plain text input, each valid reaction is written as a canonical SMILES
+string on its own line.
+
+For CSV/TSV input, all original columns are preserved and a new column
+(default: `canonical_smiles`) is appended with the canonicalized result.
+Rows that fail canonicalization are dropped unless `--keep_failed` is set.
+
+A summary of canonicalized vs. failed reactions is printed per file.
+
+---
+
+
+## Follow the steps below for implementing each of the tools included in the `methods/` folder:**
 
 ### E-zyme / E-zyme2
 
@@ -237,6 +310,8 @@ conda env create -f methods/BEC-Pred/becpred_gpu.yml
 conda activate becpred_env
 ```
 
+
+
 2. Make runner executable and run:
 ```bash
 chmod +x methods/BEC-Pred/run_becpred.sh
@@ -344,28 +419,39 @@ The plot with be saved in ´results/CaseStudy/casestudyplot.png´.
 
 ### MajorityVote 
 
-A tool to combine multiple EC number prediction outputs using two Majority Voting strategies. 
-- **Top1**: Takes the first (top) EC prediction from each method and picks the EC number that appears most frequently across all methods.
-- **Top5**: Takes the Top 5 predictions from each method. Each prediction contributes a weighted vote (5 points for rank 1, 4 for rank 2, etc.), the EC number with the highest cumulative weighted score across methods is selected as the consensus prediction.
 
-#### Input: 
-A CSV file containing:
-- An identifier column (default: entity, e.g., enzyme, compound, or reaction ID)
-- One or more method columns, each containing EC predictions in this format:
+A tool to combine multiple EC number prediction outputs using weighted majority voting across multiple prediction methods.
 
+---
+
+#### How It Works
+
+Each method's predictions are parsed into ranked groups. All ECs in the same group receive equal points based on their rank position:
+
+- Rank 1 → `top_n` pts
+- Rank 2 → `top_n - 1` pts
+- ...
+- Rank N → 1 pt
+
+Points are summed across all methods to produce a total weighted score per EC. Co-predictions (pipe-separated ECs at the same rank) receive equal points and are not penalised.
+
+Tie-breaking (all descending): total weighted score → count at rank 1 → count at rank 2 → ... → if still tied, pipe-joined into one shared slot (e.g. `1.2.3|4.5.6`).
+
+ECs are automatically collapsed to the 3rd hierarchical level (e.g. `1.2.3.4` → `1.2.3`).
+
+#### Input
+
+A CSV file with an identifier column (default: `entity`) and one or more method columns containing EC predictions in this format:
 ```text
 1.1.1.1|1.1.1.2;2.7.1.1|2.7.1.2
 ```
-Where:
-- ; separates ranked prediction groups (rank 1 → rank 2 → rank 3 …). 
-- | separates tied ECs within the same rank.
+
+- `;` separates rank slots (rank 1 → rank 2 → ...)
+- `|` separates tied ECs within the same rank slot
 
 #### Usage
 
-Command-Line Examples: 
-
-1. Compute for All Entities 
-
+**All entities:**
 ```bash
 python3 majority_ec_vote.py \
   --input_csv results/merged_predictions.csv \
@@ -374,7 +460,7 @@ python3 majority_ec_vote.py \
   --output_csv results/majority_votes.csv
 ```
 
-2. Compute for One Specific Reaction
+**Single entity:**
 ```bash
 python3 majority_ec_vote.py \
   --input_csv results/merged_predictions.csv \
@@ -382,22 +468,34 @@ python3 majority_ec_vote.py \
   --methods MethodA MethodB MethodC
 ```
 
-3. Custom Identifier Column
+**Custom identifier column or top-N window:**
 ```bash
 python3 majority_ec_vote.py \
   --input_csv results/merged_predictions.csv \
   --entity all \
   --use_all \
-  --id_col reaction_id
+  --id_col reaction_id \
+  --top_n 3
 ```
 
-#### Output: 
+#### Arguments
 
-For each entity (or a single entity if specified), the tool reports:
+| Argument | Default | Description |
+|:---------|:--------|:------------|
+| `--input_csv` | — | Path to merged prediction CSV (required) |
+| `--entity` | — | Entity ID to query, or `all` (required) |
+| `--methods` | — | Specific method columns to use |
+| `--use_all` | — | Use all EC prediction columns |
+| `--top_n` | `5` | Scoring window and output length |
+| `--id_col` | `entity` | Name of the identifier column |
+| `--output_csv` | — | Optional path to save results CSV |
 
-| **Column Name**       | **Description** |
-|:----------------------|:----------------|
-| `majority_vote_top1`  | Most frequent Top-1 EC prediction across methods |
-| `majority_vote_top5`  | Weighted Top-5 consensus EC prediction |
+Either `--methods` or `--use_all` must be provided.
 
-(Optional) saved to a CSV file if --output_csv is provided	
+
+#### Output
+
+| Column | Description |
+|:-------|:------------|
+| `majority_top1` | Top-ranked consensus EC (or `A\|B` if unbreakable tie) |
+| `majority_topN_ranked` | Full ranked list of up to N slots, separated by ` ; ` |

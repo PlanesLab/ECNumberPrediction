@@ -1,5 +1,5 @@
 # === Parameters ===
-include_majority_vote <- TRUE   # set to FALSE to exclude TOP1/TOP5 majority vote from plots
+include_majority_vote <- TRUE   # set to FALSE to exclude majority vote from plots
 
 # === Load libraries ===
 library(dplyr)
@@ -15,8 +15,11 @@ library(ggpubr)
 library(readxl)
 library(readr)
 
+# Set seed for reproducible ordering of tied predictions
+set.seed(42)
+
 # READ DATAFRAME HERE
-merged_output <- read_csv("results/CaseStudy/merged_output.csv")
+df <- read_csv("/Users/josefinaarcagni/Downloads/merged_output_case3.csv")
 
 # === Functions ===
 collapse_to_third_level <- function(predictions) {
@@ -67,9 +70,91 @@ score_prediction <- function(preds, true_ec) {
   0
 }
 
+# === Hierarchical tie-breaking for majority vote ===
+select_winner_hierarchical <- function(rank_votes) {
+  # rank_votes is a list where each EC has a vector of counts [rank1_count, rank2_count, ...]
+  
+  if (length(rank_votes) == 0) return(NA)
+  
+  # Convert to data frame for easier manipulation
+  vote_df <- data.frame(
+    ec = names(rank_votes),
+    stringsAsFactors = FALSE
+  )
+  
+  # Add rank counts
+  max_ranks <- max(sapply(rank_votes, length))
+  for (i in 1:max_ranks) {
+    vote_df[[paste0("rank", i)]] <- sapply(rank_votes, function(x) {
+      if (length(x) >= i) x[i] else 0
+    })
+  }
+  
+  # Sort by rank1 (descending), then rank2, then rank3, etc.
+  rank_cols <- paste0("rank", 1:max_ranks)
+  vote_df <- vote_df %>%
+    arrange(across(all_of(rank_cols), desc))
+  
+  # Get the top scorer(s)
+  top_row <- vote_df[1, ]
+  
+  # Check if there are ties (same counts across all ranks)
+  if (nrow(vote_df) > 1) {
+    is_tie <- TRUE
+    for (col in rank_cols) {
+      if (top_row[[col]] != vote_df[2, col]) {
+        is_tie <- FALSE
+        break
+      }
+    }
+    
+    if (is_tie) {
+      # Find all ECs with identical rank counts
+      tied_ecs <- c(top_row$ec)
+      for (i in 2:nrow(vote_df)) {
+        same <- TRUE
+        for (col in rank_cols) {
+          if (vote_df[i, col] != top_row[[col]]) {
+            same <- FALSE
+            break
+          }
+        }
+        if (same) {
+          tied_ecs <- c(tied_ecs, vote_df$ec[i])
+        } else {
+          break
+        }
+      }
+      # Sort and concatenate
+      tied_ecs <- sort(tied_ecs)
+      return(paste(tied_ecs, collapse = "|"))
+    }
+  }
+  
+  return(top_row$ec)
+}
+
+# === Helper function to check if prediction matches true EC and return fractional hit ===
+check_hit_with_pipes_fractional <- function(prediction, true_prefix) {
+  if (is.na(prediction) || prediction == "") return(0)
+  
+  # Split by pipe to handle tied predictions (same rank)
+  pred_options <- str_split(prediction, "\\|")[[1]]
+  pred_options <- str_trim(pred_options)
+  
+  # Count how many match
+  num_matches <- sum(pred_options == true_prefix)
+  
+  # Return fractional hit: 1/n where n is total number of tied predictions
+  if (num_matches > 0) {
+    return(1 / length(pred_options))
+  } else {
+    return(0)
+  }
+}
+
 # === Prepare data ===
 ec_methods <- c("E-zyme1","E-zyme2", "BridgIT", "SelenzymeRF","SIMMER", "Theia" ,"BEC-Pred","CLAIRE")
-df <- merged_output %>% rename(Theia = Theia_ECREACT)
 df <- df %>% rowwise() %>% mutate(across(all_of(ec_methods), ~ collapse_to_third_level(.x))) %>% ungroup()
 
 # === Heatmap data ===
@@ -99,7 +184,7 @@ tree_data_ordered <- df %>%
     class_num = as.integer(class),
     subclass_num = as.numeric(subclass),
     subsubclass_num = as.numeric(subsubclass),
-    class = paste0( class),
+    class = paste0(class),
     subclass = paste0(class, ".", subclass),
     subsubclass = paste0(subclass, ".", subsubclass)
   ) %>% arrange(class_num, subclass_num, subsubclass_num, drug)
@@ -160,7 +245,7 @@ method_hits1 <- heatmap_data %>% filter(hit_type=="Top 1") %>%
 
 top_hits <- bind_rows(method_hits1, method_hits5)
 
-# === Majority vote (optional) ===
+# === Majority vote with Top-1 and Top-5 (with fractional hits) ===
 if (include_majority_vote) {
   majority_methods <- c("Theia", "BEC-Pred", "SIMMER", "SelenzymeRF")
   
@@ -170,84 +255,121 @@ if (include_majority_vote) {
     mutate(
       true_prefix = paste(str_split(drug_EC, "\\.")[[1]][1:3], collapse="."),
       
-      pred_top1 = {
-        weighted_votes <- list()
+      # Top-1 Majority vote: only use rank 1
+      pred_majority_top1 = {
+        rank_votes <- list()
+        
         for (m in majority_methods) {
           pred_str <- get(m)
-          if (!is.na(pred_str)) {
-            preds <- str_split(pred_str, ";")[[1]][1]
-            if (length(preds) > 0) {
-              pipes <- str_split(preds, "\\|")[[1]]
+          if (!is.na(pred_str) && pred_str != "") {
+            # Get only the first rank (Top-1)
+            preds <- str_split(pred_str, ";")[[1]]
+            if (length(preds) >= 1) {
+              pipes <- str_split(preds[[1]], "\\|")[[1]]
               pipes <- str_trim(pipes)
               pipes <- pipes[pipes != ""]
+              
               for (p in pipes) {
                 subsub <- paste(str_split(p, "\\.")[[1]][1:3], collapse=".")
-                weighted_votes[[subsub]] <- (weighted_votes[[subsub]] %||% 0) + 5
+                if (is.null(rank_votes[[subsub]])) {
+                  rank_votes[[subsub]] <- 1
+                } else {
+                  rank_votes[[subsub]] <- rank_votes[[subsub]] + 1
+                }
               }
             }
           }
         }
-        if (length(weighted_votes) == 0) NA else names(sort(unlist(weighted_votes), decreasing=TRUE))[1]
+        
+        # Select winner based on votes
+        if (length(rank_votes) == 0) {
+          NA
+        } else {
+          max_votes <- max(unlist(rank_votes))
+          winners <- names(rank_votes)[unlist(rank_votes) == max_votes]
+          if (length(winners) > 1) {
+            paste(sort(winners), collapse = "|")
+          } else {
+            winners[1]
+          }
+        }
       },
       
-      pred_top5 = {
-        weighted_votes <- list()
+      # Top-5 Majority vote: use ranks 1-5 with hierarchical tie-breaking
+      pred_majority_top5 = {
+        rank_votes <- list()
+        
         for (m in majority_methods) {
           pred_str <- get(m)
-          if (!is.na(pred_str)) {
+          if (!is.na(pred_str) && pred_str != "") {
             preds <- str_split(pred_str, ";")[[1]]
             preds <- preds[1:min(5, length(preds))]
-            for (i in seq_along(preds)) {
-              pipes <- str_split(preds[[i]], "\\|")[[1]]
+            
+            for (rank_idx in seq_along(preds)) {
+              pipes <- str_split(preds[[rank_idx]], "\\|")[[1]]
               pipes <- str_trim(pipes)
               pipes <- pipes[pipes != ""]
-              weight <- max(6 - i, 1)
+              
               for (p in pipes) {
                 subsub <- paste(str_split(p, "\\.")[[1]][1:3], collapse=".")
-                weighted_votes[[subsub]] <- (weighted_votes[[subsub]] %||% 0) + weight
+                
+                if (is.null(rank_votes[[subsub]])) {
+                  rank_votes[[subsub]] <- rep(0, 5)
+                }
+                
+                rank_votes[[subsub]][rank_idx] <- rank_votes[[subsub]][rank_idx] + 1
               }
             }
           }
         }
-        if (length(weighted_votes) == 0) NA else names(sort(unlist(weighted_votes), decreasing=TRUE))[1]
+        
+        select_winner_hierarchical(rank_votes)
       },
       
-      top1_hit_type = case_when(
-        is.na(pred_top1) ~ "No prediction",
-        pred_top1 == true_prefix ~ "Top 1",
+      # Check matches with fractional hits
+      majority_fractional_hit_top1 = check_hit_with_pipes_fractional(pred_majority_top1, true_prefix),
+      majority_fractional_hit_top5 = check_hit_with_pipes_fractional(pred_majority_top5, true_prefix),
+      
+      # Classify hit types (for display)
+      majority_hit_type_top1 = case_when(
+        is.na(pred_majority_top1) | pred_majority_top1 == "" ~ "No prediction",
+        majority_fractional_hit_top1 > 0 ~ "Top 1",
         TRUE ~ "No hit"
       ),
       
-      top5_hit_type = case_when(
-        is.na(pred_top5) ~ "No prediction",
-        pred_top5 == true_prefix ~ "Top 5",
+      majority_hit_type_top5 = case_when(
+        is.na(pred_majority_top5) | pred_majority_top5 == "" ~ "No prediction",
+        majority_fractional_hit_top5 > 0 ~ "Top 5",
         TRUE ~ "No hit"
       )
     ) %>% ungroup()
   
-  # summaries for plotting
+  # Individual method Top-1 hits
   top1_hits_only <- heatmap_data %>%
     filter(hit_type == "Top 1") %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
     count(method, class) %>%
     mutate(HitType = "Top 1")
   
-  majority_only_top1 <- majority_preds %>%
-    filter(top1_hit_type == "Top 1") %>%
+  # Majority vote Top-1 hits (with fractional counting)
+  majority_top1 <- majority_preds %>%
+    filter(majority_fractional_hit_top1 > 0) %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
-    count(method = "TOP1", class) %>%
-    mutate(HitType = "TOP1")
+    group_by(method = "Top-1", class) %>%
+    summarise(n = sum(majority_fractional_hit_top1), .groups = "drop") %>%
+    mutate(HitType = "Majority Top-1")
   
-  majority_only_top5 <- majority_preds %>%
-    filter(top5_hit_type %in% c("Top 1", "Top 5")) %>%
+  # Majority vote Top-5 hits (with fractional counting)
+  majority_top5 <- majority_preds %>%
+    filter(majority_fractional_hit_top5 > 0) %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
-    count(method = "TOP5", class) %>%
-    mutate(HitType = "TOP5")
+    group_by(method = "Top-5", class) %>%
+    summarise(n = sum(majority_fractional_hit_top5), .groups = "drop") %>%
+    mutate(HitType = "Majority Top-5")
   
-  top1_plus_majority <- bind_rows(top1_hits_only, majority_only_top1, majority_only_top5)
+  top1_plus_majority <- bind_rows(top1_hits_only, majority_top1, majority_top5)
   
 } else {
-  # if not including majority vote
   top1_plus_majority <- heatmap_data %>%
     filter(hit_type == "Top 1") %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
@@ -255,10 +377,10 @@ if (include_majority_vote) {
     mutate(HitType = "Top 1")
 }
 
-# set factor levels depending on inclusion
+# Set factor levels depending on inclusion
 if (include_majority_vote) {
   top1_plus_majority <- top1_plus_majority %>%
-    mutate(method = factor(method, levels = c(ec_methods, "TOP1", "TOP5")))
+    mutate(method = factor(method, levels = c(ec_methods, "Top-1", "Top-5")))
 } else {
   top1_plus_majority <- top1_plus_majority %>%
     mutate(method = factor(method, levels = ec_methods))
@@ -280,7 +402,7 @@ top1_barplot_with_majority <- ggplot(top1_plus_majority, aes(y = n, x = method, 
     name = NULL,
     labels = ec_labels
   ) +
-  scale_y_continuous(breaks = seq(0, 25, by = 5), limits = c(0, 25)) +
+  scale_y_continuous(breaks = seq(0, 27, by = 5), limits = c(0, 27)) +
   theme_minimal() +
   labs(x = NULL, y = NULL) +
   theme(
@@ -312,7 +434,7 @@ print(ggarranged_combined_plot)
 
 # === Save final figure ===
 ggsave(
-  filename = "results/CaseStudy/casestudyplot.png",    
+  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/CaseStudy/casestudyplot_final.jpg",    
   plot = ggarranged_combined_plot,            
   width = 10,                      
   height = 15,                      
@@ -320,3 +442,19 @@ ggsave(
   bg= "white"
 )
 
+# === Save Majority Vote Table (only if included) ===
+if (include_majority_vote) {
+  majority_table <- majority_preds %>%
+    select(drug, true_EC = drug_EC, 
+           majority_prediction_top1 = pred_majority_top1,
+           majority_fractional_hit_top1,
+           majority_hit_type_top1,
+           majority_prediction_top5 = pred_majority_top5,
+           majority_fractional_hit_top5, 
+           majority_hit_type_top5)
+  
+  write_csv(
+    majority_table, 
+    "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/CaseStudy/majority_vote_results_final.csv"
+  )
+}

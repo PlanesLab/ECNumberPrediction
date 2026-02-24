@@ -13,9 +13,9 @@ import math
 import zipfile
 import re
 
-systemfile_path = "/FormattedReactions.txt"
-molfiles_path = "/molfiles"
-output_base_path = "/methods/BridgIT/input/reduced_inputs_KEGG"
+systemfile_path = "/scratch/jarcagniriv/ECNumberPrediction/methods/BridgIT/input/input_rhea/systemfile.txt"
+molfiles_path = "/scratch/jarcagniriv/ECNumberPrediction/methods/BridgIT/input/input_rhea/molfiles"
+output_base_path = "/scratch/jarcagniriv/ECNumberPrediction/methods/BridgIT/input/reduced_inputs_RHEA"
 
 os.makedirs(output_base_path, exist_ok=True)
 
@@ -25,7 +25,7 @@ with open(systemfile_path, "r") as infile:
 header = lines[0:4]
 reactions = lines[4:]
 num_reactions = len(reactions)
-split_size = math.ceil(num_reactions / 20)
+split_size = math.ceil(num_reactions / 10)
 
 def clean_equation(equation):
     # Remove variable stoichiometry labels: (n), (m), (n+1), (m-1), (n-m), (m+1), etc.
@@ -35,7 +35,7 @@ def clean_equation(equation):
     equation = equation.replace(" ", "")
     return equation
 
-for i in range(20):
+for i in range(10):
     start_idx = i * split_size
     end_idx = min((i + 1) * split_size, num_reactions)
     selected_reactions = []
@@ -68,10 +68,11 @@ for i in range(20):
             shutil.copy(source_path, destination_path)
     
     output_file_path = os.path.join(split_folder, "reduced_systemfile.txt")
-    with open(output_file_path, "w") as outfile:
-        outfile.write("COMPOUNDS\nENTRY\nreactionsS\n")  # Add the requested lines at the beginning
+    with open(output_file_path, "w") as outfile: # Add the requested lines at the beginning
         outfile.writelines(header)
+        outfile.write("ENTRY;KEGG;EQUATION;OPERATORS\n")
         outfile.writelines(selected_reactions)
+        
     
     zip_file_path = os.path.join(output_base_path, f"reducedinput{i + 1}.zip")
     with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -83,3 +84,14 @@ for i in range(20):
     
     shutil.rmtree(split_folder)
     print(f"Reduced system file saved to: {zip_file_path}")
+
+# 1. https://lcsb-databases.epfl.ch/Bridgit/GetResults/4149229
+# 2. https://lcsb-databases.epfl.ch/Bridgit/GetResults/6187416
+# 3. https://lcsb-databases.epfl.ch/Bridgit/GetResults/5673440
+# 4. https://lcsb-databases.epfl.ch/Bridgit/GetResults/7958982
+# 5. https://lcsb-databases.epfl.ch/Bridgit/GetResults/6533370
+# 6. https://lcsb-databases.epfl.ch/Bridgit/GetResults/4466904
+# 7. https://lcsb-databases.epfl.ch/Bridgit/GetResults/2025148 
+# 8. https://lcsb-databases.epfl.ch/Bridgit/GetResults/5045446
+# 9. https://lcsb-databases.epfl.ch/Bridgit/GetResults/1516874
+# 10. https://lcsb-databases.epfl.ch/Bridgit/GetResults/3942469
