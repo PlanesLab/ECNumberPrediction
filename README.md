@@ -10,8 +10,8 @@ This repository contains the code and data used to evaluate computational tools 
 
 
 Specifically, we assessed the tools under three conditions: 
-1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — Using 20% of the KEGG 2025 database (1866 reactions). We also evaluated these using a subset of 500 Rhea 2025 reactions.
-2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. We trained the models with the training dtaaste and tested with the test for each split.  Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
+1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — using 20% of the KEGG 2025 database (1866 reactions). We also evaluated these using a subset of 500 Rhea 2025 reactions.
+2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. We trained the models with the training dataset and tested with the test set for each split. Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
 3. We did a case study on 28 drugs and their associated enzyme-annotated degradation reactions, and used them to query against all selected methods. Additionally, we applied a Top1 and Top5 **majority voting strategy** using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred), to show the potential of combining multiple algorithms to correctly predict EC number. 
 
 ### Table of Contents: 
@@ -172,7 +172,7 @@ A summary of canonicalized vs. failed reactions is printed per file.
 ---
 
 
-## Follow the steps below for implementing each of the tools included in the `methods/` folder:**
+## Follow the steps below for implementing each of the tools included in the `methods/` folder:
 
 ### E-zyme / E-zyme2
 
@@ -194,7 +194,7 @@ chmod +x methods/E-zyme/run_ezyme.sh
 bash methods/E-zyme/run_ezyme.sh
 ```
 
-This will run the script for Case 1 and Case Study and the *result* csv files fr E-zyme and E-zyme 2 will both be saved in the `results/` folder under the corresponding case folders with the tool name: `E-zyme.csv`. 
+This will run the script for Case 1 and Case Study and the *result* CSV files for E-zyme and E-zyme2 will both be saved in the `results/` folder under the corresponding case folders with the tool name: `E-zyme.csv`.
 
 ### BridgIT
 
@@ -215,7 +215,7 @@ chmod +x methods/BridgIT/run_BridgIT.sh
 bash methods/BridgIT/run_BridgIT.sh
 ```
 
-*Notes:* BridgIT can only be accessed through its own server in https://lcsb-databases.epfl.ch/Bridgit, a user account needs to be created to access it. The first part of the bash file will process reaction SMILES and create the necessary files in `methods/BridgIT/input/` to input in their web server. Once the results ready, download them from the server and place them in the `methods/BridgIT/output/` folder. The steps for extracting the results are in the second part of the bash file. 
+*Notes:* BridgIT can only be accessed through its own server in https://lcsb-databases.epfl.ch/Bridgit, a user account needs to be created to access it. The first part of the bash file will process reaction SMILES and create the necessary files in `methods/BridgIT/input/` to input in their web server. Once the results are ready, download them from the server and place them in the `methods/BridgIT/output/` folder. The steps for extracting the results are in the second part of the bash file. 
 
 This will run the script for Case 1 and Case Study and the *result* csv files will be saved in the `results/` folder under the corresponding case folders with the tool name: `BridgIT.csv`. 
 
@@ -238,7 +238,7 @@ pip install requests beautifulsoup4 pandas
 git clone -b SelenzymeRF https://github.com/synbiochem/selenzyme.git methods/SelenzymeRF/SelenzymeRF_code
 cd methods/SelenzymeRF/SelenzymeRF_code
 ```
-*Notes:* unzip the required reference datasets as indicated in the upstream repository. The script already included in `Selenzyme_code/`: `/methods/SelenzymeRF/SelenzymeRF_code/start_server.sh` was specifically modified to run the cases and shouldn´t be deleted. 
+*Notes:* unzip the required reference datasets as indicated in the upstream repository. The script already included in `Selenzyme_code/`: `/methods/SelenzymeRF/SelenzymeRF_code/start_server.sh` was specifically modified to run the cases and shouldn't be deleted. 
 
 
 4. Make runner executable and run:
@@ -263,7 +263,7 @@ git clone https://github.com/aebustion/SIMMER.git methods/SIMMER/SIMMER_code
 cd methods/SIMMER/SIMMER_code
 ```
 
-*Notes:* import the required reference datasets as indicated in the upstream repository. The scripts already included in `SIMMER_code/`: `methods/SIMMER/SIMMER_code/SIMMER/SIMMER.py` and `methods/SIMMER/SIMMER_code/SIMMER/SIMMER2.py` were specifically modified to run the cases and shouldn´t be deleted. 
+*Notes:* import the required reference datasets as indicated in the upstream repository. The scripts already included in `SIMMER_code/`: `methods/SIMMER/SIMMER_code/SIMMER/SIMMER.py` and `methods/SIMMER/SIMMER_code/SIMMER/SIMMER2.py` were specifically modified to run the cases and shouldn't be deleted. 
 
 3. Make runner executable and run:
 ```bash
@@ -289,7 +289,7 @@ git clone https://github.com/daenuprobst/theia.git methods/theia/theia_code
 cd methods/theia/theia_code
 ```
 
-*Notes:*  All the scripts already included in `Theia_code/`  were specifically modified to run the cases and shouldn´t be deleted. 
+*Notes:*  All the scripts already included in `Theia_code/`  were specifically modified to run the cases and shouldn't be deleted. 
 
 
 3. Make runner executable and run:
@@ -356,9 +356,9 @@ Results are organized in subfolders inside `results/`:
 
 - `results/Case1/` – Results for the first evaluation case (queried all methods with their original dataset tested with KEGG reaction queries).
 
-- `results/Case2/` – Results for the second evaluation case (five open-code methods trained on 80% of MetaNetX dataset and queried on the other 20%).
+- `results/Case2/` – Results for the second evaluation case (five open-source methods trained on 80% of MetaNetX dataset and queried on the other 20%).
 
-- `results/CaseStudy/` – Results for the Case Study (queries all methods with their original dataset with 28).
+- `results/CaseStudy/` – Results for the Case Study (queries all methods with their original dataset using 28 drug-associated reactions).
 
 - `results/MajorityVote/` – Top1 and Top5 majority voting strategies using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred). 
 
@@ -382,7 +382,7 @@ Output: results/Case1/evaluation_summary.csv
 ```bash
 Rscript results/Case1/metrics-case1.R
 ```
-The plot with be saved in ´results/Case1/case1_plot.png´.
+The plot will be saved in `results/Case1/case1_plot.png`.
 
 ### Case 2
 
@@ -400,22 +400,22 @@ Output: results/Case2/evaluation_summary.csv
 
 3. Generate plots:
 ```bash
-Rscript results/Case2/metrics-case2.R
+Rscript results/Case2/results-metanetx/metrics-case2.R
 ```
-The plot with be saved in ´results/Case2/case2_plot.png´.
+The plot will be saved in `results/Case2/results-metanetx/case2_plot.jpg`.
 
 ### CaseStudy
 1. Merge all tool CSV outputs into merged_output.csv:
 ```bash
 python3 results/CaseStudy/join_results.py
 ```
-3. Generate plots:
+Output: results/CaseStudy/merged_output.csv
+
+2. Generate plots:
 ```bash
 Rscript results/CaseStudy/case_study_heatmap.R
 ```
-Output: results/CaseStudy/merged_output.csv
-
-The plot with be saved in ´results/CaseStudy/casestudyplot.png´.
+The plot will be saved in `results/CaseStudy/casestudyplot.png`.
 
 ### MajorityVote 
 
@@ -453,7 +453,7 @@ A CSV file with an identifier column (default: `entity`) and one or more method 
 
 **All entities:**
 ```bash
-python3 majority_ec_vote.py \
+python3 majority_vote.py \
   --input_csv results/merged_predictions.csv \
   --entity all \
   --use_all \
@@ -462,7 +462,7 @@ python3 majority_ec_vote.py \
 
 **Single entity:**
 ```bash
-python3 majority_ec_vote.py \
+python3 majority_vote.py \
   --input_csv results/merged_predictions.csv \
   --entity R001 \
   --methods MethodA MethodB MethodC
@@ -470,7 +470,7 @@ python3 majority_ec_vote.py \
 
 **Custom identifier column or top-N window:**
 ```bash
-python3 majority_ec_vote.py \
+python3 majority_vote.py \
   --input_csv results/merged_predictions.csv \
   --entity all \
   --use_all \
