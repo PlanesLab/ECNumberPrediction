@@ -57,7 +57,7 @@ def clean_value(x):
     return x
 
 # Apply the cleaning function to every cell in the merged DataFrame
-merged_df = merged_df.applymap(clean_value)
+merged_df = merged_df.map(clean_value)
 
 # -------------------------------
 # Part 3: Merge with the KEGG CSV
@@ -78,10 +78,9 @@ else:
     print("Column 'EC Number' not found in the KEGG file.")
     exit()
 
-# Rename the "EC Number" column to "KEGG"
-kegg_df = kegg_df.rename(columns={"Reaction_EC_number": "KEGG"})
+# Keep the EC column name as-is
 
-kegg_df = kegg_df.applymap(clean_value)
+kegg_df = kegg_df.map(clean_value)
 
 # Merge the dataframe with the merged_df from Query_Results on "reaction_id"
 merged_df = pd.merge(merged_df, kegg_df, on="reaction_id", how="outer")
@@ -91,7 +90,7 @@ merged_df = pd.merge(merged_df, kegg_df, on="reaction_id", how="outer")
 # -------------------------------
 
 # Define the output file path
-output_file = os.path.join(folder_path, "results/Case2/merged_output.csv")
+output_file = "results/Case2/merged_output.csv"
 
 # Save the final merged and cleaned DataFrame to a CSV file
 merged_df.to_csv(output_file, index=False)

@@ -8,7 +8,7 @@ from functools import reduce
 # -------------------------------
 
 # Define the folder path and file pattern for CSV files in Query_Results
-folder_path = "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/results"
+folder_path = "results/CaseStudy/results"
 file_pattern = os.path.join(folder_path, "*.csv")
 
 # Get a list of all CSV files in the folder
@@ -54,14 +54,14 @@ def clean_value(x):
     return x
 
 # Apply the cleaning function to every cell in the merged DataFrame
-merged_df = merged_df.applymap(clean_value)
+merged_df = merged_df.map(clean_value)
 
 # -------------------------------
 # Part 3: Merge with the KEGG CSV
 # -------------------------------
 
-# Define the KEGG CSV file path
-kegg_file = "/scratch/jarcagniriv/ECNumberPrediction/data/Drugs/drug_smiles_updated.csv"
+# Define the drugs CSV file path
+kegg_file = "data/Drugs/drug_smiles_updated.csv"
 
 kegg_df = pd.read_csv(kegg_file)
 
@@ -79,7 +79,7 @@ else:
 kegg_df = kegg_df.rename(columns={"Ec_trunc": "drug_EC"})
 
 # (Optional) Clean the KEGG dataframe as well using the same cleaning function
-kegg_df = kegg_df.applymap(clean_value)
+kegg_df = kegg_df.map(clean_value)
 
 # Merge the dataframe with the merged_df from Query_Results on "reaction_id"
 merged_df = pd.merge(merged_df, kegg_df, on="drug", how="outer")
@@ -89,7 +89,7 @@ merged_df = pd.merge(merged_df, kegg_df, on="drug", how="outer")
 # -------------------------------
 
 # Define the output file path
-output_file = os.path.join(folder_path, "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy?merged_output.csv")
+output_file = "results/CaseStudy/merged_output_case3.csv"
 
 # Save the final merged and cleaned DataFrame to a CSV file
 merged_df.to_csv(output_file, index=False)

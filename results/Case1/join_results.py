@@ -8,7 +8,7 @@ from functools import reduce
 # -------------------------------
 
 # Define the folder path and file pattern for CSV files in Query_Results
-folder_path = "/results/Case1/results"
+folder_path = "results/Case1/KEGG-1.8K"
 file_pattern = os.path.join(folder_path, "*.csv")
 
 # Get a list of all CSV files in the folder
@@ -57,7 +57,7 @@ def clean_value(x):
     return x
 
 # Apply the cleaning function to every cell in the merged DataFrame
-merged_df = merged_df.applymap(clean_value)
+merged_df = merged_df.map(clean_value)
 
 # -------------------------------
 # Part 3: Merge with the KEGG CSV
@@ -81,11 +81,10 @@ else:
     print("Column 'EC Number' not found in the KEGG file.")
     exit()
 
-# Rename the "EC Number" column to "KEGG"
-kegg_df = kegg_df.rename(columns={"Reaction_EC_number": "KEGG"})
+# Keep the "EC Number" column name as-is (used downstream by get_metrics.py)
 
 # (Optional) Clean the KEGG dataframe as well using the same cleaning function
-kegg_df = kegg_df.applymap(clean_value)
+kegg_df = kegg_df.map(clean_value)
 
 # Merge the KEGG dataframe with the merged_df from Query_Results on "reaction_id"
 merged_df = pd.merge(merged_df, kegg_df, on="reaction_id", how="outer")

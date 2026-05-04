@@ -2,94 +2,91 @@
 Script: query_selenzyme.py
 Author: Josefina Arcagni
 Date: 2025-09-09
-Description: This script queries the Selenzyme server with reactions from a CSV file and saves the results.
+Description: Query the Selenzyme server with reactions from a CSV file and save results.
 """
 
-import os
+import argparse
 import csv
+import os
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import argparse
 
-parser = argparse.ArgumentParser(description="Query Selenzyme with reactions from a CSV file.")
-parser.add_argument("--base_url", type=str, default="http://localhost:32784", help="Base URL for Selenzyme server")
-parser.add_argument("--csv_file", type=str, help="Path to input CSV file")
-parser.add_argument("--results_folder", type=str, help="Folder to save query results")
-parser.add_argument("--reaction_name_column", type=str, default="drug", help="Column name for reaction name")
-parser.add_argument("--reaction_smiles_column", type=str, default="reaction_smiles", help="Column name for reaction SMILES")
-args = parser.parse_args()
 
-BASE_URL = args.base_url
-CSV_FILE = args.csv_file
-RESULTS_FOLDER = args.results_folder
-REACTION_NAME_COL = args.reaction_name_column
-REACTION_SMILES_COL = args.reaction_smiles_column
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Query Selenzyme with reactions from a CSV file.")
+    parser.add_argument("--server_url", type=str, default="http://localhost:32784",
+                        help="Base URL for Selenzyme server (default: http://localhost:32784).")
+    parser.add_argument("--csv_file", type=str, required=True,
+                        help="Path to input CSV file.")
+    parser.add_argument("--results_folder", type=str, required=True,
+                        help="Folder to save per-reaction query results.")
+    parser.add_argument("--reaction_name_column", type=str, default="drug",
+                        help="Column name for the reaction identifier (default: drug).")
+    parser.add_argument("--reaction_smiles_column", type=str, default="reaction_smiles",
+                        help="Column name for the reaction SMILES (default: reaction_smiles).")
+    return parser.parse_args()
 
-os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-# Read the CSV file using pandas (assumes headers are present)
-df = pd.read_csv(CSV_FILE)
+def query_reaction(
+    session: requests.Session,
+    base_url: str,
+    reaction_id: str,
+    smiles: str,
+    output_file: str,
+) -> None:
+    smarts_data = {"smarts": smiles, "rdb": "ec", "rxnid": ""}
+    display_response = session.post(f"{base_url}/display", data=smarts_data)
+    if display_response.status_code != 200:
+        print(f"Step 1 failed for {reaction_id} (status {display_response.status_code})")
+        return
 
-# Loop over each reaction (each row) in the CSV
-for index, row in df.iterrows():
-    reaction_id = row[REACTION_NAME_COL]
-    # Construct output path and skip if it already exists
-    output_file = os.path.join(RESULTS_FOLDER, f"{reaction_id}.csv")
-    if os.path.exists(output_file):
-        print(f"Skipping reaction {reaction_id}: results already exist.")
-        continue
+    results_data = {"targets": "200", "noMSA": "on", "host": "83333", "finger": "Morgan"}
+    results_response = session.post(f"{base_url}/results", data=results_data)
+    if results_response.status_code not in [200, 302]:
+        print(f"Step 2 failed for {reaction_id} (status {results_response.status_code})")
+        return
 
-    isomeric_smiles = row[REACTION_SMILES_COL]
-    print(f"\nProcessing reaction {reaction_id}...")
-
-    session = requests.Session()
-
-    home_response = session.get(f"{BASE_URL}/")
-    soup_home = BeautifulSoup(home_response.text, "html.parser")
-    # CSRF token extraction (if needed) is commented out
-
-    smarts_data = {
-        "smarts": isomeric_smiles,
-        "rdb": "ec",
-        "rxnid": ""
-    }
-    display_url = f"{BASE_URL}/display"
-    display_response = session.post(display_url, data=smarts_data)
-    if display_response.status_code == 200:
-        print("Step 1: Reaction input submitted successfully!")
-    else:
-        print(f"Step 1: Failed to submit reaction input. (Status Code: {display_response.status_code})")
-        continue
-
-    results_data = {
-        "targets": "200",
-        "noMSA": "on",
-        "host": "83333",
-        "finger": "Morgan"
-    }
-    results_url = f"{BASE_URL}/results"
-    results_response = session.post(results_url, data=results_data)
-    if results_response.status_code in [200, 302]:
-        print("Step 2: Results submitted successfully!")
-    else:
-        print(f"Step 2: Failed to submit results. (Status Code: {results_response.status_code})")
-        continue
-
-    soup_results = BeautifulSoup(results_response.text, "html.parser")
-    table = soup_results.find("table")
+    soup = BeautifulSoup(results_response.text, "html.parser")
+    table = soup.find("table")
     if not table:
-        print(f"Step 3: No table found in the response for reaction {reaction_id}.")
-        continue
+        print(f"No results table for reaction {reaction_id}.")
+        return
 
     rows_html = table.find_all("tr")
-    table_data = []
-    for row_html in rows_html:
-        cells = row_html.find_all(["th", "td"])
-        row_data = [cell.get_text(strip=True) for cell in cells]
-        table_data.append(row_data)
-
+    table_data = [
+        [cell.get_text(strip=True) for cell in row.find_all(["th", "td"])]
+        for row in rows_html
+    ]
     with open(output_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerows(table_data)
-    print(f"Step 4: Table data saved to {output_file}")
+        csv.writer(f).writerows(table_data)
+    print(f"Saved results for {reaction_id} → {output_file}")
+
+
+def main() -> None:
+    args = parse_args()
+    os.makedirs(args.results_folder, exist_ok=True)
+
+    df = pd.read_csv(args.csv_file)
+
+    for _, row in df.iterrows():
+        reaction_id = str(row[args.reaction_name_column])
+        output_file = os.path.join(args.results_folder, f"{reaction_id}.csv")
+
+        if os.path.exists(output_file):
+            print(f"Skipping {reaction_id} – already processed.")
+            continue
+
+        smiles = str(row[args.reaction_smiles_column])
+        print(f"\nProcessing reaction {reaction_id}...")
+
+        session = requests.Session()
+        session.get(f"{args.server_url}/")
+        query_reaction(session, args.server_url, reaction_id, smiles, output_file)
+
+    print("\nDone.")
+
+
+if __name__ == "__main__":
+    main()

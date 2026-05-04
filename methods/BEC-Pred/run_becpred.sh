@@ -1,13 +1,8 @@
 #!/bin/bash
-
 ###################################################################################
 # Author: Josefina Arcagni
 # Date: 9/9/2025
-# Description: Run BEC-Pred for various cases.
-###################################################################################
-
-###################################################################################
-### Run BEC-Pred 
+# Description: Run BEC-Pred for Case 1, Case 2, and Case Study.
 ###################################################################################
 
 #SBATCH --job-name=Becpred
@@ -19,116 +14,86 @@
 #SBATCH --mem=128G
 #SBATCH --gres=gpu:1
 #SBATCH --partition=preemption
-#SBATCH -o /scratch/jarcagniriv/ECNumberPrediction/results/logs/bench_%j.out
+#SBATCH -o results/logs/becpred_%j.out
 
-echo ===================================
-echo ===     Load the Packages       ===
-echo ===================================
-echo `date`
+set -euo pipefail
 
-module load Anaconda3  
-source activate /scratch/jarcagniriv/ECNumberPredictionReview/Envs/becpred_gpu
+echo "==================================="
+echo "===     Load the Packages       ==="
+echo "==================================="
+echo "$(date)"
+
+module load Anaconda3
+conda activate becpred_gpu
 
 python -c 'import sys; print(sys.version_info[:])'
+python -c 'import torch; print(f"GPU: {torch.cuda.is_available()}, count: {torch.cuda.device_count()}")'
 
-echo $PATH
-export PATH="ECNumberPredictionReview/Envs/becpred_gpu/bin:$PATH"
-export LD_LIBRARY_PATH="/ECNumberPredictionReview/Envs/becpred_gpu/lib:$LD_LIBRARY_PATH"
+CODE_DIR="methods/BEC-Pred/BEC-Pred_code"
 
-# Check GPU availability
-python -c 'import torch; print(f"GPU Available: {torch.cuda.is_available()}"); print(f"GPU Count: {torch.cuda.device_count()}"); print(f"GPU Name: {torch.cuda.get_device_name(0)}")'
-
-###################################################################################
-### CASE 1
-###################################################################################
-echo ===================================
-echo ===   Run Case1 Evaluation     ===
-echo ===================================
+# --- Case 1: KEGG ---
+echo "==================================="
+echo "===   Run Case 1 Evaluation     ==="
+echo "==================================="
 start_time=$(date +%s)
 
-CODE_DIR="ECNumberPrediction/methods/BEC-Pred/BEC-Pred_code"
-RESULTS_DIR="ECNumberPrediction/results/Case1"
-DATA_DIR="ECNumberPrediction/data/KEGG"
+python "$CODE_DIR/eval_model.py" \
+    --model_path "$CODE_DIR/model/trained_512" \
+    --queries "data/Subsets/KEGG/8:2KEGGTest_canonicalized.txt" \
+    --output_csv "$CODE_DIR/results/eval_results_case1.csv"
 
-EVAL_OUTPUT="$CODE_DIR/results/eval_results.csv"
-FINETUNE_OUTPUT="$CODE_DIR/model/trained_512"
-QUERIES="$DATA_DIR/8:2KEGGTest_canonicalized.txt"
+python "$CODE_DIR/labels/label_assigner.py" \
+    --input_csv "$CODE_DIR/results/eval_results_case1.csv" \
+    --labels "$CODE_DIR/labels/labels_becpred.pkl" \
+    --output_csv "results/Case1/KEGG-1.8K/BEC-Pred.csv"
 
-python $CODE_DIR/eval_model.py --model_path "$FINETUNE_OUTPUT" --queries "$QUERIES" --output_csv "$EVAL_OUTPUT"
+echo "Case 1 completed in $(( $(date +%s) - start_time )) seconds"
 
-end_time=$(date +%s)
-eval_duration=$((end_time - start_time))
-echo "Case 1 Eval completed in $eval_duration seconds"
-
-echo "Assigning labels..."
-FINAL_RESULTS="$RESULTS_DIR/BEC-Pred.csv"
-python $CODE_DIR/labels/label_assigner.py --input_csv "$EVAL_OUTPUT" --labels CODE_DIR/labels/labels_becpred.pkl --output_csv "$FINAL_RESULTS"
-
-###################################################################################
-### CASE 2
-###################################################################################
-echo ===================================
-echo ===   Run Case2 Evaluation     ===
-echo ===================================
+# --- Case 2: MetaNetX ---
+echo "==================================="
+echo "===   Run Case 2 Evaluation     ==="
+echo "==================================="
 start_time=$(date +%s)
 
-CODE_DIR="ECNumberPrediction/methods/BEC-Pred/BEC-Pred_code"
-RESULTS_DIR="ECNumberPrediction/results/Case2"
-DATA_DIR="ECNumberPrediction/data/MetaNetX"
+python "$CODE_DIR/pretrain.py" \
+    --output_dir "$CODE_DIR/model/pretrained"
 
-start_time=$(date +%s)  
-python $CODE_DIR/pretrain.py --output_dir $CODE_DIR/model/pretrained
-end_time=$(date +%s)  
-pretrain_duration=$((end_time - start_time)) 
-echo "Pretrain completed in $pretrain_duration seconds"
+python "$CODE_DIR/finetune_bec.py" \
+    --pretrained_model "$CODE_DIR/model/pretrained" \
+    --output_dir "$CODE_DIR/model/metanetx" \
+    --train_data data/Splits-DBs/MetaNetX/train.tsv
 
-start_time=$(date +%s)  
-python $CODE_DIR/finetune_bec.py --pretrained_model $CODE_DIR/model/pretrained --output_dir $CODE_DIR/model/metanetx --train_data $DATA_DIR/train_metanetx.csv
-end_time=$(date +%s)  
-finetune_duration=$((end_time - start_time))  
-echo "Finetune completed in $finetune_duration seconds"
+python "$CODE_DIR/eval_model.py" \
+    --model_path "$CODE_DIR/model/metanetx" \
+    --queries data/Splits-DBs/MetaNetX/queries.txt \
+    --output_csv "$CODE_DIR/results/eval_results_case2.csv"
 
-EVAL_OUTPUT="$CODE_DIR/results/eval_results.csv"
-FINETUNE_OUTPUT="$CODE_DIR/model/metanetx"
-QUERIES="$DATA_DIR/queries.txt"
+python "$CODE_DIR/labels/label_assigner.py" \
+    --input_csv "$CODE_DIR/results/eval_results_case2.csv" \
+    --labels "$CODE_DIR/labels/labels_metanetx.pkl" \
+    --output_csv "results/Case2/results-DBs/MetaNetX/BEC-Pred.csv"
 
-python $CODE_DIR/eval_model.py --model_path "$FINETUNE_OUTPUT" --queries "$QUERIES" --output_csv "$EVAL_OUTPUT"
+echo "Case 2 completed in $(( $(date +%s) - start_time )) seconds"
 
-end_time=$(date +%s)
-eval_duration=$((end_time - start_time))
-echo "Case 2 Eval completed in $eval_duration seconds"
-
-echo "Assigning labels..."
-FINAL_RESULTS="$RESULTS_DIR/BEC-Pred.csv"
-python $CODE_DIR/labels/label_assigner.py --input_csv "$EVAL_OUTPUT" --labels CODE_DIR/labels/labels_metanetx.pkl --output_csv "$FINAL_RESULTS"
-
-###################################################################################
-### CASE STUDY
-###################################################################################
-echo ===================================
-echo ===   Run Case Study Evaluation ===
-echo ===================================
+# --- Case Study ---
+echo "==================================="
+echo "===   Run Case Study Evaluation ==="
+echo "==================================="
 start_time=$(date +%s)
 
-CODE_DIR="ECNumberPrediction/methods/BEC-Pred/BEC-Pred_code"
-RESULTS_DIR="ECNumberPrediction/results/CaseStudy"
-DATA_DIR="ECNumberPrediction/data/Drugs"
+python "$CODE_DIR/eval_model.py" \
+    --model_path "$CODE_DIR/model/trained_512" \
+    --queries data/Drugs/reaction_smiles_can.txt \
+    --output_csv "$CODE_DIR/results/eval_results_casestudy.csv"
 
-EVAL_OUTPUT="$CODE_DIR/results/eval_results.csv"
-FINETUNE_OUTPUT="$CODE_DIR/model/trained_512"
-QUERIES="$DATA_DIR/reaction_smiles_can.txt"
+python "$CODE_DIR/labels/label_assigner.py" \
+    --input_csv "$CODE_DIR/results/eval_results_casestudy.csv" \
+    --labels "$CODE_DIR/labels/labels_becpred.pkl" \
+    --output_csv "results/CaseStudy/results/BEC-Pred.csv"
 
-python $CODE_DIR/eval_model.py --model_path "$FINETUNE_OUTPUT" --queries "$QUERIES" --output_csv "$EVAL_OUTPUT"
+echo "Case Study completed in $(( $(date +%s) - start_time )) seconds"
 
-end_time=$(date +%s)
-eval_duration=$((end_time - start_time))
-echo "Case Study Eval completed in $eval_duration seconds"
-
-echo "Assigning labels..."
-FINAL_RESULTS="$RESULTS_DIR/BEC-Pred.csv"
-python $CODE_DIR/labels/label_assigner.py --input_csv "$EVAL_OUTPUT" --labels CODE_DIR/labels/labels_becpred.pkl --output_csv "$FINAL_RESULTS"
-
-echo ===================================
-echo ===        Finished Run         ===
-echo ===================================
-echo `date`
+echo "==================================="
+echo "===        Finished Run         ==="
+echo "==================================="
+echo "$(date)"
