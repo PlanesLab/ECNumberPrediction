@@ -6,12 +6,10 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(stringr)
-library(data.tree)
-library(patchwork)
+library(cowplot)
 library(RColorBrewer)
 library(tibble)
 library(purrr)
-library(ggpubr)
 library(readxl)
 library(readr)
 
@@ -19,7 +17,7 @@ library(readr)
 set.seed(42)
 
 # READ DATAFRAME HERE
-df <- read_csv("/Users/josefinaarcagni/Downloads/merged_output_case3.csv")
+df <- read_csv("/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/merged_output_case3.csv")
 
 # === Functions ===
 collapse_to_third_level <- function(predictions) {
@@ -134,20 +132,25 @@ select_winner_hierarchical <- function(rank_votes) {
   return(top_row$ec)
 }
 
-# === Helper function to check if prediction matches true EC and return fractional hit ===
+# === Helper function to check if prediction matches true EC; whole hit/miss, not fractional ===
 check_hit_with_pipes_fractional <- function(prediction, true_prefix) {
   if (is.na(prediction) || prediction == "") return(0)
-  
+
   # Split by pipe to handle tied predictions (same rank)
   pred_options <- str_split(prediction, "\\|")[[1]]
   pred_options <- str_trim(pred_options)
-  
+
+  # A 4-way-or-more tie is too diluted a consensus to count as a hit,
+  # regardless of whether the true EC is among the tied options
+  if (length(pred_options) >= 4) return(0)
+
   # Count how many match
   num_matches <- sum(pred_options == true_prefix)
-  
-  # Return fractional hit: 1/n where n is total number of tied predictions
+
+  # A tie under 4 that contains the true EC counts as a whole hit (1),
+  # not a fractional 1/n credit
   if (num_matches > 0) {
-    return(1 / length(pred_options))
+    return(1)
   } else {
     return(0)
   }
@@ -156,6 +159,111 @@ check_hit_with_pipes_fractional <- function(prediction, true_prefix) {
 # === Prepare data ===
 ec_methods <- c("E-zyme1","E-zyme2", "BridgIT", "SelenzymeRF","SIMMER", "Theia" ,"BEC-Pred","CLAIRE")
 df <- df %>% rowwise() %>% mutate(across(all_of(ec_methods), ~ collapse_to_third_level(.x))) %>% ungroup()
+
+# === Majority vote (Top-1 and Top-5, with fractional hits) -- computed here
+# (rather than down by panel B) so panel A's heatmap can add an "MJ" column
+# (the top-5 majority vote) alongside the individual methods ===
+if (include_majority_vote) {
+  majority_methods <- c("Theia", "BEC-Pred", "SIMMER", "SelenzymeRF")
+
+  majority_preds <- df %>%
+    select(drug, drug_EC, all_of(majority_methods)) %>%
+    rowwise() %>%
+    mutate(
+      true_prefix = paste(str_split(drug_EC, "\\.")[[1]][1:3], collapse="."),
+
+      # Top-1 Majority vote: only use rank 1
+      pred_majority_top1 = {
+        rank_votes <- list()
+
+        for (m in majority_methods) {
+          pred_str <- get(m)
+          if (!is.na(pred_str) && pred_str != "") {
+            # Get only the first rank (Top-1)
+            preds <- str_split(pred_str, ";")[[1]]
+            if (length(preds) >= 1) {
+              pipes <- str_split(preds[[1]], "\\|")[[1]]
+              pipes <- str_trim(pipes)
+              pipes <- pipes[pipes != ""]
+
+              for (p in pipes) {
+                subsub <- paste(str_split(p, "\\.")[[1]][1:3], collapse=".")
+                if (is.null(rank_votes[[subsub]])) {
+                  rank_votes[[subsub]] <- 1
+                } else {
+                  rank_votes[[subsub]] <- rank_votes[[subsub]] + 1
+                }
+              }
+            }
+          }
+        }
+
+        # Select winner based on votes
+        if (length(rank_votes) == 0) {
+          NA
+        } else {
+          max_votes <- max(unlist(rank_votes))
+          winners <- names(rank_votes)[unlist(rank_votes) == max_votes]
+          if (length(winners) > 1) {
+            paste(sort(winners), collapse = "|")
+          } else {
+            winners[1]
+          }
+        }
+      },
+
+      # Top-5 Majority vote: use ranks 1-5 with hierarchical tie-breaking
+      pred_majority_top5 = {
+        rank_votes <- list()
+
+        for (m in majority_methods) {
+          pred_str <- get(m)
+          if (!is.na(pred_str) && pred_str != "") {
+            preds <- str_split(pred_str, ";")[[1]]
+            preds <- preds[1:min(5, length(preds))]
+
+            for (rank_idx in seq_along(preds)) {
+              pipes <- str_split(preds[[rank_idx]], "\\|")[[1]]
+              pipes <- str_trim(pipes)
+              pipes <- pipes[pipes != ""]
+
+              for (p in pipes) {
+                subsub <- paste(str_split(p, "\\.")[[1]][1:3], collapse=".")
+
+                if (is.null(rank_votes[[subsub]])) {
+                  rank_votes[[subsub]] <- rep(0, 5)
+                }
+
+                rank_votes[[subsub]][rank_idx] <- rank_votes[[subsub]][rank_idx] + 1
+              }
+            }
+          }
+        }
+
+        select_winner_hierarchical(rank_votes)
+      },
+
+      # Check matches with fractional hits
+      majority_fractional_hit_top1 = check_hit_with_pipes_fractional(pred_majority_top1, true_prefix),
+      majority_fractional_hit_top5 = check_hit_with_pipes_fractional(pred_majority_top5, true_prefix),
+
+      # Classify hit types (for display)
+      majority_hit_type_top1 = case_when(
+        is.na(pred_majority_top1) | pred_majority_top1 == "" ~ "No prediction",
+        majority_fractional_hit_top1 > 0 ~ "Top 1",
+        TRUE ~ "No hit"
+      ),
+
+      # pred_majority_top5 is a single consensus winner (not a ranked list), so a
+      # match means the vote's pick was right -- classify it like a Top-1 hit
+      # (green), not Top 5 (blue), for the MJ/MV heatmap column in panel A.
+      majority_hit_type_top5 = case_when(
+        is.na(pred_majority_top5) | pred_majority_top5 == "" ~ "No prediction",
+        majority_fractional_hit_top5 > 0 ~ "Top 1",
+        TRUE ~ "No hit"
+      )
+    ) %>% ungroup()
+}
 
 # === Heatmap data ===
 heatmap_data <- df %>%
@@ -171,7 +279,7 @@ heatmap_data <- df %>%
   ) %>%
   ungroup() %>%
   mutate(
-    method = factor(method, levels = ec_methods),
+    method = factor(method, levels = if (include_majority_vote) c(ec_methods, "MV-1", "MV-5") else ec_methods),
     hit_type = factor(hit_type, levels = c("Top 1", "Top 5", "No hit", "No prediction"))
   )
 
@@ -191,6 +299,36 @@ tree_data_ordered <- df %>%
 
 ordered_drugs <- tree_data_ordered$drug
 heatmap_data <- heatmap_data %>% mutate(drug=factor(drug, levels=rev(ordered_drugs)))
+
+# Add the "MV-1" and "MV-5" columns to panel A -- the top-1 and top-5
+# majority vote's per-drug hit type, mirroring panel B's MV-1/MV-5 bars
+if (include_majority_vote) {
+  mv1_rows <- majority_preds %>%
+    transmute(
+      drug = factor(drug, levels = rev(ordered_drugs)),
+      drug_EC,
+      method = factor("MV-1", levels = levels(heatmap_data$method)),
+      predictions = pred_majority_top1,
+      hit_type = factor(majority_hit_type_top1, levels = levels(heatmap_data$hit_type)),
+      top1_score = NA_integer_,
+      weighted_score = NA_real_
+    )
+  mv5_rows <- majority_preds %>%
+    transmute(
+      drug = factor(drug, levels = rev(ordered_drugs)),
+      drug_EC,
+      method = factor("MV-5", levels = levels(heatmap_data$method)),
+      predictions = pred_majority_top5,
+      hit_type = factor(majority_hit_type_top5, levels = levels(heatmap_data$hit_type)),
+      top1_score = NA_integer_,
+      weighted_score = NA_real_
+    )
+  heatmap_data <- bind_rows(
+    heatmap_data %>% select(-top_preds),
+    mv1_rows,
+    mv5_rows
+  )
+}
 
 # === Annotation bar ===
 custom_class_colors <- c("1"="#ef8d50","2"="#47b275","3"="#4ac6cd","4"="#ecd632")
@@ -215,7 +353,7 @@ label_positions <- annotation_bar %>%
 
 annotation_plot <- ggplot(annotation_bar, aes(y=drug, x=0.95)) +
   geom_tile(aes(fill=color), width=0.003) +
-  geom_text(data=label_positions, aes(y=y, x=0.944, label=subsubclass), color="black", hjust=0.1, size=3.3) +
+  geom_text(data=label_positions, aes(y=y, x=0.944, label=subsubclass), color="black", hjust=0.1, size=4.5) +
   scale_fill_identity() +
   theme_void() +
   theme(plot.margin=margin(5,5,5,10))
@@ -230,7 +368,7 @@ heatmap <- ggplot(heatmap_data, aes(x=method, y=drug, fill=hit_type)) +
         axis.ticks=element_blank(),
         axis.title=element_blank(),
         legend.position="right",
-        legend.text = element_text(size = 15),
+        legend.text = element_text(size = 19),
         plot.margin=margin(10,10,10,0)) +
   labs(fill=NULL)
 
@@ -245,130 +383,35 @@ method_hits1 <- heatmap_data %>% filter(hit_type=="Top 1") %>%
 
 top_hits <- bind_rows(method_hits1, method_hits5)
 
-# === Majority vote with Top-1 and Top-5 (with fractional hits) ===
+# === Majority vote bars for panel B (MV-1 / MV-5, with fractional hits) ===
+# majority_preds was already computed above (needed there for panel A's "MJ" column).
 if (include_majority_vote) {
-  majority_methods <- c("Theia", "BEC-Pred", "SIMMER", "SelenzymeRF")
-  
-  majority_preds <- df %>%
-    select(drug, drug_EC, all_of(majority_methods)) %>%
-    rowwise() %>%
-    mutate(
-      true_prefix = paste(str_split(drug_EC, "\\.")[[1]][1:3], collapse="."),
-      
-      # Top-1 Majority vote: only use rank 1
-      pred_majority_top1 = {
-        rank_votes <- list()
-        
-        for (m in majority_methods) {
-          pred_str <- get(m)
-          if (!is.na(pred_str) && pred_str != "") {
-            # Get only the first rank (Top-1)
-            preds <- str_split(pred_str, ";")[[1]]
-            if (length(preds) >= 1) {
-              pipes <- str_split(preds[[1]], "\\|")[[1]]
-              pipes <- str_trim(pipes)
-              pipes <- pipes[pipes != ""]
-              
-              for (p in pipes) {
-                subsub <- paste(str_split(p, "\\.")[[1]][1:3], collapse=".")
-                if (is.null(rank_votes[[subsub]])) {
-                  rank_votes[[subsub]] <- 1
-                } else {
-                  rank_votes[[subsub]] <- rank_votes[[subsub]] + 1
-                }
-              }
-            }
-          }
-        }
-        
-        # Select winner based on votes
-        if (length(rank_votes) == 0) {
-          NA
-        } else {
-          max_votes <- max(unlist(rank_votes))
-          winners <- names(rank_votes)[unlist(rank_votes) == max_votes]
-          if (length(winners) > 1) {
-            paste(sort(winners), collapse = "|")
-          } else {
-            winners[1]
-          }
-        }
-      },
-      
-      # Top-5 Majority vote: use ranks 1-5 with hierarchical tie-breaking
-      pred_majority_top5 = {
-        rank_votes <- list()
-        
-        for (m in majority_methods) {
-          pred_str <- get(m)
-          if (!is.na(pred_str) && pred_str != "") {
-            preds <- str_split(pred_str, ";")[[1]]
-            preds <- preds[1:min(5, length(preds))]
-            
-            for (rank_idx in seq_along(preds)) {
-              pipes <- str_split(preds[[rank_idx]], "\\|")[[1]]
-              pipes <- str_trim(pipes)
-              pipes <- pipes[pipes != ""]
-              
-              for (p in pipes) {
-                subsub <- paste(str_split(p, "\\.")[[1]][1:3], collapse=".")
-                
-                if (is.null(rank_votes[[subsub]])) {
-                  rank_votes[[subsub]] <- rep(0, 5)
-                }
-                
-                rank_votes[[subsub]][rank_idx] <- rank_votes[[subsub]][rank_idx] + 1
-              }
-            }
-          }
-        }
-        
-        select_winner_hierarchical(rank_votes)
-      },
-      
-      # Check matches with fractional hits
-      majority_fractional_hit_top1 = check_hit_with_pipes_fractional(pred_majority_top1, true_prefix),
-      majority_fractional_hit_top5 = check_hit_with_pipes_fractional(pred_majority_top5, true_prefix),
-      
-      # Classify hit types (for display)
-      majority_hit_type_top1 = case_when(
-        is.na(pred_majority_top1) | pred_majority_top1 == "" ~ "No prediction",
-        majority_fractional_hit_top1 > 0 ~ "Top 1",
-        TRUE ~ "No hit"
-      ),
-      
-      majority_hit_type_top5 = case_when(
-        is.na(pred_majority_top5) | pred_majority_top5 == "" ~ "No prediction",
-        majority_fractional_hit_top5 > 0 ~ "Top 5",
-        TRUE ~ "No hit"
-      )
-    ) %>% ungroup()
-  
-  # Individual method Top-1 hits
+  # Individual method Top-1 hits (excludes the "MJ" column added to heatmap_data above --
+  # that's panel A only, not one of panel B's per-method bars)
   top1_hits_only <- heatmap_data %>%
-    filter(hit_type == "Top 1") %>%
+    filter(hit_type == "Top 1", method %in% ec_methods) %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
     count(method, class) %>%
     mutate(HitType = "Top 1")
-  
+
   # Majority vote Top-1 hits (with fractional counting)
   majority_top1 <- majority_preds %>%
     filter(majority_fractional_hit_top1 > 0) %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
-    group_by(method = "Top-1", class) %>%
+    group_by(method = "MV-1", class) %>%
     summarise(n = sum(majority_fractional_hit_top1), .groups = "drop") %>%
     mutate(HitType = "Majority Top-1")
-  
+
   # Majority vote Top-5 hits (with fractional counting)
   majority_top5 <- majority_preds %>%
     filter(majority_fractional_hit_top5 > 0) %>%
     left_join(tree_data_ordered %>% select(drug, class), by="drug") %>%
-    group_by(method = "Top-5", class) %>%
+    group_by(method = "MV-5", class) %>%
     summarise(n = sum(majority_fractional_hit_top5), .groups = "drop") %>%
     mutate(HitType = "Majority Top-5")
-  
+
   top1_plus_majority <- bind_rows(top1_hits_only, majority_top1, majority_top5)
-  
+
 } else {
   top1_plus_majority <- heatmap_data %>%
     filter(hit_type == "Top 1") %>%
@@ -380,7 +423,7 @@ if (include_majority_vote) {
 # Set factor levels depending on inclusion
 if (include_majority_vote) {
   top1_plus_majority <- top1_plus_majority %>%
-    mutate(method = factor(method, levels = c(ec_methods, "Top-1", "Top-5")))
+    mutate(method = factor(method, levels = c(ec_methods, "MV-1", "MV-5")))
 } else {
   top1_plus_majority <- top1_plus_majority %>%
     mutate(method = factor(method, levels = ec_methods))
@@ -407,38 +450,40 @@ top1_barplot_with_majority <- ggplot(top1_plus_majority, aes(y = n, x = method, 
   labs(x = NULL, y = NULL) +
   theme(
     strip.text.y = element_text(angle = 0, face = "bold"),
-    axis.text.y = element_text(size = 12),
+    axis.text.y = element_text(size = 16),
     axis.text.x = element_text(size = 14, angle = 45, vjust = 1, hjust = 1),
-    panel.grid.major.y = element_blank(),  
+    panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
-    legend.text = element_text(size = 15),
+    legend.text = element_text(size = 19),
     legend.position = "right"
   )
 
 # === Combine plots A + B ===
-final_plot <- annotation_plot + heatmap + plot_layout(ncol=2, widths=c(0.5, 4))
+final_plot <- plot_grid(annotation_plot, heatmap, ncol = 2, rel_widths = c(0.5, 4),
+                         align = "h", axis = "tb")
+final_plot <- ggdraw(final_plot) + theme(plot.margin = margin(t = 30, r = 10, b = 10, l = 10))
 
-ggarranged_combined_plot <- ggarrange(
-  final_plot + theme(plot.margin = margin(t = 30, r = 10, b = 10, l = 10)),                 
-  top1_barplot_with_majority + theme(plot.margin = margin(t = 30, r = 0, b = 10, l = 50)),        
-  labels = c("A", "B"),              
-  label.x = 0.01,                    
-  label.y = 1,                     
-  ncol = 1, nrow = 2,                
-  heights = c(1.3, 1),               
-  common.legend = FALSE,
-  font.label = list(size = 16, face = "bold")  
+ggarranged_combined_plot <- plot_grid(
+  final_plot,
+  top1_barplot_with_majority + theme(plot.margin = margin(t = 30, r = 0, b = 10, l = 50)),
+  labels = c("A", "B"),
+  label_size = 24,
+  label_fontface = "bold",
+  label_x = 0.01,
+  label_y = 1,
+  ncol = 1, nrow = 2,
+  rel_heights = c(1.3, 1)
 )
 
 print(ggarranged_combined_plot)
 
 # === Save final figure ===
 ggsave(
-  filename = "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/CaseStudy/casestudyplot_final.jpg",    
-  plot = ggarranged_combined_plot,            
-  width = 10,                      
-  height = 15,                      
-  dpi = 300,   
+  filename = "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/casestudyplot_final.jpg",
+  plot = ggarranged_combined_plot,
+  width = 10,
+  height = 15,
+  dpi = 300,
   bg= "white"
 )
 
@@ -455,6 +500,6 @@ if (include_majority_vote) {
   
   write_csv(
     majority_table, 
-    "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/CaseStudy/majority_vote_results_final.csv"
+    "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/majority_vote_results_final.csv"
   )
 }

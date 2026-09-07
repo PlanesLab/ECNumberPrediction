@@ -52,6 +52,10 @@ def extract_kegg_compounds(equation: str) -> set:
 def retrieve_molfile(compound_id: str) -> None:
     if compound_id in retrieved_compounds:
         return
+    existing_path = os.path.join(molfile_folder, f"{compound_id}.mol")
+    if os.path.exists(existing_path):
+        retrieved_compounds.add(compound_id)
+        return
     url = f"http://rest.kegg.jp/get/{compound_id}/mol"
     try:
         response = requests.get(url)
@@ -85,6 +89,7 @@ def main():
             entries.append(f"{index};;{formatted_equation};")
 
     with open(output_file, mode='w') as outfile:
+        outfile.write("COMPOUNDS\nENTRY\nreactionsS\n")
         outfile.write("ENTRY;KEGG;EQUATION;OPERATORS\n")
         outfile.write("\n".join(entries))
 

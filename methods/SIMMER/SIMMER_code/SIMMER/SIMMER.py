@@ -73,15 +73,20 @@ def fp_queries(dms_df, fps, output_dir):
 # Compute similarity matrix by adding query fingerprints to the precomputed Tanimoto matrix.
 def add_queries_to_tanimoto(fps, tan_ar):
     t0 = time.time()
-    metacyc_fps = fps[:34046]
-    dms_fps = fps[34046:]
-    tot_fps = metacyc_fps + dms_fps    
+    # n_precomputed was hardcoded to 34046 (a different reference DB's size) but must match
+    # this run's actual precomputed DB (tan_ar's own dimension), or every query fingerprint
+    # appended after it in `fps` gets silently sliced away as empty (dms_fps = fps[n:] on a
+    # shorter list), producing no predictions at all without any error.
+    n_precomputed = tan_ar.shape[0]
+    metacyc_fps = fps[:n_precomputed]
+    dms_fps = fps[n_precomputed:]
+    tot_fps = metacyc_fps + dms_fps
     tan_ar_dm = []
     for i in range(len(dms_fps)):
         tan = DataStructs.BulkTanimotoSimilarity(dms_fps[i], tot_fps)
         tan_ar_dm.append(tan)
-    tot_array = np.append(np.array(tan_ar), np.array(tan_ar_dm)[:,:34046], axis=0)
-    X_mol = np.append(tot_array, np.array(tan_ar_dm).T, axis=1)  
+    tot_array = np.append(np.array(tan_ar), np.array(tan_ar_dm)[:,:n_precomputed], axis=0)
+    X_mol = np.append(tot_array, np.array(tan_ar_dm).T, axis=1)
     t1 = time.time()
     print("\nFinished computing and adding queries to tanimoto similarity matrix in " 
           + "{:.2f}".format(t1-t0) + " seconds")
@@ -272,11 +277,12 @@ def main():
             print('No queries provided')
             sys.exit()
         
+    n_precomputed = tan_ar.shape[0]
     X_mol = add_queries_to_tanimoto(fp_queries(dms_df, fps, output_dir), tan_ar)
-    
-    # Update indices for query reactions (assuming precomputed data has 8914 entries).
+
+    # Update indices for query reactions, offset past the precomputed DB's own entries.
     for i in range(len(dms_df)):
-        id_to_index[dms_df.iloc[i, 0]] = i + 34046
+        id_to_index[dms_df.iloc[i, 0]] = i + n_precomputed
         rxn_to_ec[dms_df.iloc[i, 0]] = 'DM'
     
     # For each query reaction, predict EC numbers and output the list.

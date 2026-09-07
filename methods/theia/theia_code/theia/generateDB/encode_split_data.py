@@ -5,9 +5,9 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from drfp import DrfpEncoder
 
-def main(path: str, output_path: str):
+def main(path: str, output_path: str, seed: int = 42):
     # Load the data
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, sep=None, engine="python")
 
     # Filter to rows where 'ec' is not missing
     df = df[df.ec.notna()]
@@ -38,7 +38,7 @@ def main(path: str, output_path: str):
         fps_arr = df.fps.to_numpy()
         groups = df.ec_1.to_numpy()  # stratify based on the first EC level
 
-        sss_outer = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
+        sss_outer = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=seed)
         for i, (trainval_index, test_index) in enumerate(sss_outer.split(X, groups)):
             # Split train+val and test
             X_trainval, X_test = X[trainval_index], X[test_index]
@@ -47,7 +47,7 @@ def main(path: str, output_path: str):
             groups_trainval = groups[trainval_index]
 
             # Now split trainval into train and val
-            sss_inner = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+            sss_inner = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=seed)
             train_index, val_index = next(sss_inner.split(X_trainval, groups_trainval))
 
             X_train, X_val = X_trainval[train_index], X_trainval[val_index]
@@ -72,7 +72,7 @@ def main(path: str, output_path: str):
             })
 
             df_train.to_csv(f"{output_path}-{i}-{ec}-train.csv", index=False)
-            df_val.to_csv(f"{output_path}-{i}-{ec}-val.csv", index=False)
+            df_val.to_csv(f"{output_path}-{i}-{ec}-valid.csv", index=False)
             df_test.to_csv(f"{output_path}-{i}-{ec}-test.csv", index=False)
 
 if __name__ == "__main__":

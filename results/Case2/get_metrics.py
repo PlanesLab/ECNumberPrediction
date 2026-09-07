@@ -20,13 +20,13 @@ def is_invalid_ec_group(s):
     return True
 
 initial_count = len(df)
-invalid_mask = df['EC Number'].apply(is_invalid_ec_group)
+invalid_mask = df['ec'].apply(is_invalid_ec_group)
 invalid_rows = df[invalid_mask]
 df = df[~invalid_mask].copy()
 filtered_count = len(df)
 
 print("❌ Eliminated rows with only class 7 or incomplete ECs:")
-print(invalid_rows[['reaction_id', 'EC Number']].to_string(index=False))
+print(invalid_rows[['reaction_id', 'ec']].to_string(index=False))
 print(f"\n🔎 Removed {initial_count - filtered_count} rows.")
 print(f"✅ Remaining valid reactions: {filtered_count}")
 
@@ -42,8 +42,8 @@ def parse_ecs(s):
             ecs.add(".".join(parts[:3]))
     return ecs
 
-df['true_set'] = df['EC Number'].apply(parse_ecs)
-prediction_cols = [c for c in df.columns if c not in ['reaction_id', 'EC Number', 'true_set']]
+df['true_set'] = df['ec'].apply(parse_ecs)
+prediction_cols = [c for c in df.columns if c not in ['reaction_id', 'ec', 'true_set']]
 
 # === Collect All Labels ===
 all_labels = set().union(*df['true_set'])

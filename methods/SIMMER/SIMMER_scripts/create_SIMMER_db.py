@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 from rdkit import Chem, DataStructs
@@ -5,9 +6,13 @@ from rdkit.Chem import rdChemReactions
 import pickle
 import os
 
-# Define paths
-input_path = "/SIMMER_code/SIMMER/SIMMER_files_metanetx/chem_data/metanetx_reactions.csv"
-output_dir = "/SIMMER_code/SIMMER/SIMMER_files_metanetx/chem_data"
+parser = argparse.ArgumentParser()
+parser.add_argument("--db_dir", required=True,
+                     help="Dir containing chem_data/metanetx_reactions.csv (simmer_input.py's output); outputs written alongside it")
+args = parser.parse_args()
+
+input_path = os.path.join(args.db_dir, "chem_data", "metanetx_reactions.csv")
+output_dir = os.path.join(args.db_dir, "chem_data")
 
 # Ensure the output directory exists
 os.makedirs(output_dir, exist_ok=True)
@@ -17,6 +22,11 @@ try:
     input_db = pd.read_csv(input_path)
 except Exception as e:
     raise FileNotFoundError(f"Could not load the input file: {e}")
+
+# simmer_input.py writes the EC column under whatever name --ec-col was given (here "ec"),
+# not "EC_number" -- normalize so the rest of this script's logic is unchanged.
+if 'EC_number' not in input_db.columns and 'ec' in input_db.columns:
+    input_db = input_db.rename(columns={'ec': 'EC_number'})
 
 # Filter out rows with empty EC numbers in the "EC_number" column.
 def is_nonempty_ec(ec):

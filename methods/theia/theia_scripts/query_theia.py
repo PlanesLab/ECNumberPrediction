@@ -21,7 +21,7 @@ model = args.model
 with open(query_file, 'r') as f:
     queries = [line.strip() for line in f if line.strip()]
 
-reaction_df = pd.read_csv(reaction_ids_file)
+reaction_df = pd.read_csv(reaction_ids_file, sep=None, engine='python')
 if reaction_id_column not in reaction_df.columns:
     raise ValueError(f"The reaction ids file must contain a '{reaction_id_column}' column.")
 

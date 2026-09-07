@@ -1,102 +1,76 @@
-import pandas as pd
+"""
+Merge all per-method Case 1 prediction CSVs (KEGG-1.8K or Rhea-500) plus the
+ground-truth EC labels into one merged_output.csv.
+
+Parametrized (folder/ground-truth/output all via CLI) so it can target
+either dataset, and any seed's prediction directory, instead of the
+original hardcoded results/Case1/KEGG-1.8K + stale data/KEGG/... path.
+"""
+
+import argparse
 import glob
 import os
 from functools import reduce
 
-# -------------------------------
-# Part 1: Merge Query_Results CSVs
-# -------------------------------
+import pandas as pd
 
-# Define the folder path and file pattern for CSV files in Query_Results
-folder_path = "results/Case1/KEGG-1.8K"
-file_pattern = os.path.join(folder_path, "*.csv")
-
-# Get a list of all CSV files in the folder
-files = glob.glob(file_pattern)
-
-if not files:
-    print(f"No CSV files found in {folder_path}")
-    exit()
-
-# List to hold each DataFrame from the Query_Results folder
-dataframes = []
-
-for file in files:
-    # Read the CSV file (adjust 'sep' if needed)
-    df = pd.read_csv(file, sep=',')
-    
-    # Rename the first column to 'reaction_id' regardless of its original name
-    first_col = df.columns[0]
-    df = df.rename(columns={first_col: "reaction_id"})
-    
-    # Create a prefix based on the filename (without extension)
-    prefix = os.path.splitext(os.path.basename(file))[0] + "_"
-    
-    # Rename all columns except the join key ('reaction_id') by prefixing them with the filename
-    new_columns = {col: prefix + col for col in df.columns if col != "reaction_id"}
-    df = df.rename(columns=new_columns)
-    
-    dataframes.append(df)
-
-
-merged_df = reduce(lambda left, right: pd.merge(left, right, on="reaction_id", how="outer"), dataframes)
-
-# -------------------------------
-# Part 2: Clean the Merged DataFrame
-# -------------------------------
 
 def clean_value(x):
-    # If the value is already missing (NaN), return None
     if pd.isna(x):
         return None
-    # If the value is a string, check for unwanted patterns
     if isinstance(x, str):
         stripped = x.strip()
-        if stripped in ["", "No Significant EC", "No EC Prediction" ,"No|EC|Prediction", "nan", "nan|", "|nan"]:
+        if stripped in ["", "No Significant EC", "No EC Prediction", "No|EC|Prediction", "nan", "nan|", "|nan"]:
             return None
     return x
 
-# Apply the cleaning function to every cell in the merged DataFrame
-merged_df = merged_df.map(clean_value)
 
-# -------------------------------
-# Part 3: Merge with the KEGG CSV
-# -------------------------------
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Merge Case 1 per-method prediction CSVs with ground truth.")
+    parser.add_argument("--predictions_dir", required=True, help="Folder containing one <Method>.csv per method.")
+    parser.add_argument("--ground_truth_csv", required=True, help="CSV/TSV with reaction_id + EC Number columns.")
+    parser.add_argument("--methods", nargs="+", default=None,
+                         help="Method names to merge, e.g. SIMMER Theia. Defaults to every *.csv in predictions_dir.")
+    parser.add_argument("--gt_id_col", default="Reaction ID")
+    parser.add_argument("--gt_ec_col", default="EC Number")
+    parser.add_argument("--gt_sep", default=",")
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args()
 
-# Define the KEGG CSV file path
-kegg_file = "data/KEGG/kegg_reactions_current_test.csv"
+    if args.methods:
+        files = [os.path.join(args.predictions_dir, f"{m}.csv") for m in args.methods]
+        missing = [f for f in files if not os.path.isfile(f)]
+        if missing:
+            raise SystemExit(f"Method CSV(s) not found: {missing}")
+    else:
+        files = glob.glob(os.path.join(args.predictions_dir, "*.csv"))
+        if not files:
+            raise SystemExit(f"No CSV files found in {args.predictions_dir}")
 
-# Read the KEGG CSV file (adjust 'sep' if needed)
-kegg_df = pd.read_csv(kegg_file)
+    dataframes = []
+    for file in files:
+        df = pd.read_csv(file, sep=',', dtype=str)
+        first_col = df.columns[0]
+        df = df.rename(columns={first_col: "reaction_id"})
+        prefix = os.path.splitext(os.path.basename(file))[0] + "_"
+        new_columns = {col: prefix + col for col in df.columns if col != "reaction_id"}
+        df = df.rename(columns=new_columns)
+        dataframes.append(df)
 
-# Rename its first column to "reaction_id"
-kegg_df = kegg_df.rename(columns={kegg_df.columns[0]: "reaction_id"})
+    merged_df = reduce(lambda left, right: pd.merge(left, right, on="reaction_id", how="outer"), dataframes)
+    merged_df = merged_df.map(clean_value)
 
-print(kegg_df.columns)
+    gt_df = pd.read_csv(args.ground_truth_csv, sep=args.gt_sep, dtype=str)
+    gt_df = gt_df.rename(columns={args.gt_id_col: "reaction_id"})
+    gt_df = gt_df[["reaction_id", args.gt_ec_col]].rename(columns={args.gt_ec_col: "EC Number"})
+    gt_df = gt_df.map(clean_value)
 
-# Keep only the "reaction_id" and "EC Number" columns
-if "EC Number" in kegg_df.columns:
-    kegg_df = kegg_df[["reaction_id", "EC Number"]]
-else:
-    print("Column 'EC Number' not found in the KEGG file.")
-    exit()
+    merged_df = pd.merge(merged_df, gt_df, on="reaction_id", how="outer")
 
-# Keep the "EC Number" column name as-is (used downstream by get_metrics.py)
+    os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
+    merged_df.to_csv(args.output, index=False)
+    print(f"Merged {len(files)} method CSVs ({len(merged_df)} rows) -> '{args.output}'")
 
-# (Optional) Clean the KEGG dataframe as well using the same cleaning function
-kegg_df = kegg_df.map(clean_value)
 
-# Merge the KEGG dataframe with the merged_df from Query_Results on "reaction_id"
-merged_df = pd.merge(merged_df, kegg_df, on="reaction_id", how="outer")
-
-# -------------------------------
-# Part 4: Save the Final Merged DataFrame
-# -------------------------------
-
-# Define the output file path
-output_file = os.path.join("results/Case1/merged_output.csv")
-
-# Save the final merged and cleaned DataFrame to a CSV file
-merged_df.to_csv(output_file, index=False)
-
-print(f"Merged and cleaned file saved as '{output_file}'.")
+if __name__ == "__main__":
+    main()

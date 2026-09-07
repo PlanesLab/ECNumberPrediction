@@ -26,6 +26,9 @@ def parse_args() -> argparse.Namespace:
                         help="Column name for the reaction identifier (default: drug).")
     parser.add_argument("--reaction_smiles_column", type=str, default="reaction_smiles",
                         help="Column name for the reaction SMILES (default: reaction_smiles).")
+    parser.add_argument("--sep", type=str, default=",",
+                        help="Field separator for --csv_file (default: ','). Use $'\\t' for the "
+                             "tab-separated data/Splits-Rhea/*/seed_splits/seedN/test.tsv files.")
     return parser.parse_args()
 
 
@@ -68,7 +71,7 @@ def main() -> None:
     args = parse_args()
     os.makedirs(args.results_folder, exist_ok=True)
 
-    df = pd.read_csv(args.csv_file)
+    df = pd.read_csv(args.csv_file, sep=args.sep)
 
     for _, row in df.iterrows():
         reaction_id = str(row[args.reaction_name_column])

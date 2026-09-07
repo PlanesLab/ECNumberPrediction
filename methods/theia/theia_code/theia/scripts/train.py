@@ -397,8 +397,11 @@ def explain(data_set, explainer, label_encoder, probs, indices):
 @click.argument("valid", type=str)
 @click.argument("output", type=str)
 @click.option("--shuffle-fraction", default=0.0, type=float)
-def main(train, valid, test, output, shuffle_fraction=0.0):
-    random.seed(42)
+@click.option("--seed", default=42, type=int)
+def main(train, valid, test, output, shuffle_fraction=0.0, seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     device = get_device()
 
     model_file = Path(f"{output}.pt")
@@ -421,7 +424,7 @@ def main(train, valid, test, output, shuffle_fraction=0.0):
 
         rows = random.sample(range(1, len(df_train)), n_shuffle)
 
-        rnd = np.random.RandomState(seed=42)
+        rnd = np.random.RandomState(seed=seed)
         df_train.loc[rows, "label"] = rnd.permutation(
             df_train.loc[rows, "label"],
         )

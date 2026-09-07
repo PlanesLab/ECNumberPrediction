@@ -1,3 +1,5 @@
+import argparse
+import os
 import pandas as pd
 
 def take_ES_walk(ec_cat, ec_df, level):
@@ -37,11 +39,15 @@ def compute_perm_score(ec_df, level, ec_cat):
     denom = ec_df[level].value_counts().get(ec_cat, 1)
     return es_score / denom
 
-def main(num_permutations=1000, output_csv='permutation_scores.csv'):
+def main(file_path, num_permutations=1000, output_csv='permutation_scores.csv'):
     # Read the CSV file.
-    file_path = '/SIMMER_code/SIMMER/SIMMER_files_metanetx/chem_data/metanetx_reactions.csv'
     df = pd.read_csv(file_path)
-    
+
+    # simmer_input.py writes the EC column under whatever name --ec-col was given (here "ec"),
+    # not "EC_number" -- normalize so the rest of this script's logic is unchanged.
+    if 'EC_number' not in df.columns and 'ec' in df.columns:
+        df = df.rename(columns={'ec': 'EC_number'})
+
     # Ensure the EC_number column is treated as a string.
     df['EC_number'] = df['EC_number'].astype(str)
     

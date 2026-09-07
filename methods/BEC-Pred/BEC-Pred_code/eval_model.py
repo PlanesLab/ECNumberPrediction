@@ -10,34 +10,39 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_path", type=str, required=True, help="Path to finetuned model directory")
 parser.add_argument("--output_csv", type=str, required=True, help="Path to output CSV file")
+parser.add_argument("--queries", type=str, required=True, help="Path to text file with one reaction SMILES per line")
+# Optional: without these, results_df carries no reaction ID at all (just a bare Prediction
+# column) -- join_results.py needs an ID column to merge on, so any caller that will later join
+# these results against ground truth must pass both of these (queries.txt is defined to be
+# row-order-aligned with this file, same convention as the reaction_ids_file/queries.txt pairing
+# already used by query_theia.py).
+parser.add_argument("--reaction_ids_file", type=str, default=None,
+                     help="Optional TSV/CSV whose --reaction_id_column, read in the same row order as --queries, is attached to the output as a 'reaction_id' column.")
+parser.add_argument("--reaction_id_column", type=str, default="reaction_id")
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
 
-# Path to the trained model directory
 train_model_path = args.model_path
 model = SmilesClassificationModel("bert", train_model_path, use_cuda=torch.cuda.is_available())
 
-# Load the queries from the text file (one query per row, no header)
-with open("/scratch/jarcagniriv/FinalCodes/Case1/KEGG/8:2KEGGTest_canonicalized.txt", "r") as file:
+with open(args.queries, "r") as file:
     queries = [line.strip() for line in file if line.strip()]
 
-# Load the reaction IDs from the CSV file from the "Reaction ID" column
-reaction_ids_df = pd.read_csv("/scratch/jarcagniriv/FinalCodes/Case1/KEGG/kegg_reactions_current_test.csv")
-reaction_ids = reaction_ids_df["Reaction ID"].tolist()
-
-# Predict for the loaded queries
 predictions = model.predict(queries)
 
 print("Number of queries:", len(queries))
-print("Number of reaction IDs:", len(reaction_ids))
 
-# Create a DataFrame with reaction IDs and predictions
-results_df = pd.DataFrame({
-    "Reaction ID": reaction_ids,
-    "Prediction": predictions[0]
-})
-print(args.output_csv)
+results_data = {"Prediction": predictions[0]}
+if args.reaction_ids_file:
+    ids_df = pd.read_csv(args.reaction_ids_file, sep=None, engine="python", dtype=str)
+    if len(ids_df) != len(queries):
+        raise ValueError(
+            f"--reaction_ids_file has {len(ids_df)} rows but --queries has {len(queries)} -- "
+            "they must be row-order-aligned (same source split, e.g. queries.txt/test.tsv from prepare_seed_split_for_models.py)."
+        )
+    results_data = {"reaction_id": ids_df[args.reaction_id_column].tolist(), **results_data}
+
+results_df = pd.DataFrame(results_data)
 results_df.to_csv(args.output_csv, index=False)
-# Print the first few rows of the DataFrame to verify the output
 print(results_df.head())

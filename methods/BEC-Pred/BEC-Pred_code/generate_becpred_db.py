@@ -14,13 +14,13 @@
 #   - The label mapping is stored to a CSV file.
 # ==============================================================================
 
+import os
 import pandas as pd
 import random
 import argparse
 
-random.seed(41)
 label_mapping = {}
-current_label = 1
+current_label = 0  # 0-indexed: finetune_bec.py's model has num_labels=353, so valid class_id range is 0..352
 
 def split_promiscuous_reactions(row):
     """
@@ -60,7 +60,7 @@ def get_class_label(ec_class_th):
         current_label += 1
     return label_mapping[ec_class_th]
 
-def process_file(file_path, split_mode, remove_incomplete):
+def process_file(file_path, split_mode, remove_incomplete, ec_col='EC_number', train_frac=0.9):
     """
     Processes a TSV file with reaction data.
     
@@ -76,6 +76,8 @@ def process_file(file_path, split_mode, remove_incomplete):
       A list of dictionaries representing the processed reactions.
     """
     df = pd.read_csv(file_path, sep='\t')
+    if ec_col != 'EC_number':
+        df = df.rename(columns={ec_col: 'EC_number'})
     # Ensure the EC Number column is treated as a string
     df['EC_number'] = df['EC_number'].astype(str)
     # Remove rows with empty EC numbers or those equal to "nan" (case-insensitive)
@@ -107,7 +109,7 @@ def process_file(file_path, split_mode, remove_incomplete):
             class_label = get_class_label(ec_class_th)
             
             if split_mode == 'random':
-                split_label = 'train' if random.random() < 0.9 else 'val'
+                split_label = 'train' if random.random() < train_frac else 'val'
             else:
                 split_label = split_mode
             
@@ -118,6 +120,7 @@ def process_file(file_path, split_mode, remove_incomplete):
                 'r': reactants,
                 'p': products,
                 'rxn_class_th': ec_class_th,
+                'ec_subsubclass_label': ec_class_th,  # alias -- finetune_bec.py expects this column name
                 'class_id': class_label,
                 'split': split_label
             })
@@ -127,28 +130,38 @@ def process_file(file_path, split_mode, remove_incomplete):
 if __name__ == "__main__":
     # Set up argument parsing.
     parser = argparse.ArgumentParser(
-        description="Generate BEC-Pred Database with train/val split from KEGG data."
+        description="Generate BEC-Pred Database with train/val split from MetaNetX data."
     )
+    parser.add_argument("--train_file", required=True, help="TSV with columns reaction_smiles, ec (e.g. a seed's train.tsv)")
+    parser.add_argument("--test_file", required=True, help="TSV with columns reaction_smiles, ec (e.g. a seed's test.tsv)")
+    parser.add_argument("--output_dir", required=True)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--train_frac", type=float, default=0.9,
+                        help="Fraction of --train_file routed to 'train' (rest to 'val'); --test_file is entirely 'val'.")
     parser.add_argument("--remove_incomplete", action="store_true",
                         help="Remove rows with incomplete EC numbers (i.e., missing third part or non-numeric third part)")
     args = parser.parse_args()
-    
-    file_2018 = '/scratch/jarcagniriv/Case2/MetaNetX/train_reactions.tsv'
-    train_val_rows = process_file(file_2018, split_mode='random', remove_incomplete=args.remove_incomplete)
-    
-    file_newrxns = '/scratch/jarcagniriv/Case2/MetaNetX/test_reactions.tsv'
-    newrxns_rows = process_file(file_newrxns, split_mode='val', remove_incomplete=args.remove_incomplete)
-    
+
+    random.seed(args.seed)
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    train_val_rows = process_file(
+        args.train_file, split_mode='random', remove_incomplete=args.remove_incomplete,
+        ec_col='ec', train_frac=args.train_frac,
+    )
+    newrxns_rows = process_file(
+        args.test_file, split_mode='val', remove_incomplete=args.remove_incomplete, ec_col='ec',
+    )
+
     df_train_val = pd.DataFrame(train_val_rows)
     df_newrxns = pd.DataFrame(newrxns_rows)
-    
+
     label_data = [{'EC Class': ec_class, 'Assigned Label': label} for ec_class, label in label_mapping.items()]
     df_labels = pd.DataFrame(label_data)
-    
+
     # Save the processed data and label mapping to CSV files.
-    output_dir = '/scratch/jarcagniriv/Case2/BEC-Pred/DB/'
-    df_train_val.to_csv(output_dir + 'train_metanetx.csv', index=False)
-    df_newrxns.to_csv(output_dir + 'test_metanetx.csv', index=False)
-    df_labels.to_csv(output_dir + 'ec_class_labels.csv', index=False)
-    
-    print("Data saved to CSV files successfully.")
+    df_train_val.to_csv(os.path.join(args.output_dir, 'train_metanetx.csv'), index=False)
+    df_newrxns.to_csv(os.path.join(args.output_dir, 'test_metanetx.csv'), index=False)
+    df_labels.to_csv(os.path.join(args.output_dir, 'ec_class_labels.csv'), index=False)
+
+    print(f"Data saved to CSV files under '{args.output_dir}'")

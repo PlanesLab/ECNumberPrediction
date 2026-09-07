@@ -3,6 +3,12 @@ Stratified random 90/10 train/test split by EC subsubclass.
 
 Each EC subsubclass is represented in both splits at the same 90/10
 ratio, ensuring balanced class coverage.
+
+Splitting happens at the REACTION_ID level, not the row level: a reaction
+with multiple EC rows (broad-specificity enzymes, one row per EC) is kept
+entirely in train or entirely in test, using its first EC row as the
+stratification label. Splitting per-row instead would let the same
+reaction's SMILES leak across train and test under different EC labels.
 """
 
 import argparse
@@ -51,15 +57,39 @@ def main() -> None:
     df_clean = df.dropna(subset=['ec_subsubclass'])
     print(f"Reactions with valid EC: {len(df_clean)}")
 
+    n_multi_ec_ids = (df_clean.groupby('REACTION_ID')['EC_NUMBER'].nunique() > 1).sum()
+    if n_multi_ec_ids:
+        print(f"{n_multi_ec_ids} REACTION_ID(s) carry more than one EC row -- "
+              f"splitting by REACTION_ID group so these stay entirely in one split.")
+
+    # One representative row per REACTION_ID drives the group-level stratified
+    # split; all EC rows for that REACTION_ID then follow the same assignment.
+    groups = df_clean.drop_duplicates(subset=['REACTION_ID'], keep='first')
+
     print("\nPerforming stratified random split (90% train, 10% test)...")
     print("-" * 80)
 
-    train_df, test_df = train_test_split(
-        df_clean,
+    class_counts = groups['ec_subsubclass'].value_counts()
+    singleton_classes = class_counts[class_counts < 2].index
+    groups_singleton = groups[groups['ec_subsubclass'].isin(singleton_classes)]
+    groups_splittable = groups[~groups['ec_subsubclass'].isin(singleton_classes)]
+    if len(groups_singleton) > 0:
+        print(
+            f"Note: {len(singleton_classes)} EC subsubclass(es) have only 1 reaction "
+            f"({len(groups_singleton)} reactions total) — cannot be split, routed entirely to train."
+        )
+
+    groups_train, groups_test = train_test_split(
+        groups_splittable,
         test_size=0.1,
-        stratify=df_clean['ec_subsubclass'],
+        stratify=groups_splittable['ec_subsubclass'],
         random_state=args.seed,
     )
+    train_ids = set(groups_train['REACTION_ID']) | set(groups_singleton['REACTION_ID'])
+    test_ids = set(groups_test['REACTION_ID'])
+
+    train_df = df_clean[df_clean['REACTION_ID'].isin(train_ids)]
+    test_df = df_clean[df_clean['REACTION_ID'].isin(test_ids)]
 
     for ec_class, group in df_clean.groupby('ec_subsubclass'):
         n_total = len(group)

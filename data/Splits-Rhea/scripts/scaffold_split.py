@@ -4,6 +4,11 @@ Scaffold-aware 90/10 train/test split using Bemis-Murcko scaffolds.
 Splits are stratified per EC subsubclass so that scaffolds in train and
 test do not overlap, reducing data leakage from structurally similar
 molecules.
+
+Scaffold assignment happens at the REACTION_ID level: a reaction with
+multiple EC rows (broad-specificity enzymes, one row per EC) shares one
+scaffold group and is kept entirely in train or entirely in test, so the
+same reaction can't leak across the split under different EC labels.
 """
 
 import argparse
@@ -78,14 +83,24 @@ def main() -> None:
     df_clean = df.dropna(subset=['scaffold', 'ec_subsubclass'])
     print(f"Reactions with valid scaffolds: {len(df_clean)}")
 
+    n_multi_ec_ids = (df_clean.groupby('REACTION_ID')['EC_NUMBER'].nunique() > 1).sum()
+    if n_multi_ec_ids:
+        print(f"{n_multi_ec_ids} REACTION_ID(s) carry more than one EC row -- "
+              f"splitting by REACTION_ID group so these stay entirely in one split.")
+
+    # One representative row per REACTION_ID drives the scaffold split (its
+    # REACTION_SMILES, and hence scaffold, is identical across all EC rows);
+    # all EC rows for that REACTION_ID then follow the same assignment.
+    groups = df_clean.drop_duplicates(subset=['REACTION_ID'], keep='first')
+
     print("\nPerforming scaffold-aware split (90% train, 10% test)...")
     print("-" * 80)
 
     rng = np.random.default_rng(args.seed)
-    train_indices: list[int] = []
-    test_indices: list[int] = []
+    train_ids: set = set()
+    test_ids: set = set()
 
-    for ec_class, group in df_clean.groupby('ec_subsubclass'):
+    for ec_class, group in groups.groupby('ec_subsubclass'):
         scaffolds = group['scaffold'].unique()
         n_train = max(1, int(0.9 * len(scaffolds)))
 
@@ -96,8 +111,8 @@ def main() -> None:
         group_train = group[group['scaffold'].isin(train_scaffolds)]
         group_test = group[group['scaffold'].isin(test_scaffolds)]
 
-        train_indices.extend(group_train.index.tolist())
-        test_indices.extend(group_test.index.tolist())
+        train_ids.update(group_train['REACTION_ID'])
+        test_ids.update(group_test['REACTION_ID'])
 
         print(
             f"EC {ec_class}: {len(scaffolds):4d} scaffolds → "
@@ -105,8 +120,8 @@ def main() -> None:
             f"test: {len(test_scaffolds):4d} ({len(group_test):5d} rxns)"
         )
 
-    train_df = df_clean.loc[train_indices]
-    test_df = df_clean.loc[test_indices]
+    train_df = df_clean[df_clean['REACTION_ID'].isin(train_ids)]
+    test_df = df_clean[df_clean['REACTION_ID'].isin(test_ids)]
 
     print("\n" + "=" * 80)
     print(f"TRAIN: {len(train_df):6d} reactions ({len(train_df)/len(df_clean)*100:.1f}%)")

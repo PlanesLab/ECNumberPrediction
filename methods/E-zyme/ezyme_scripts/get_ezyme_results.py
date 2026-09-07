@@ -224,14 +224,24 @@ def main():
                         help="If true, look for pair_* subdirectories within each reaction folder (default: False)")
     parser.add_argument("--debug", action='store_true',
                         help="Enable debug output")
+    parser.add_argument("--reaction_ids_filter", default=None,
+                        help="Optional CSV with a 'Reaction ID' column -- restrict output to only these "
+                             "reaction folders (used when --input_dir is a shared cache spanning multiple "
+                             "seeds' overlapping KEGG pools, so each seed's output only reflects its own subset)")
     args = parser.parse_args()
-    
+
     root_dir = args.input_dir
     csv_data = []
-    
+
+    allowed_ids = None
+    if args.reaction_ids_filter:
+        allowed_ids = set(pd.read_csv(args.reaction_ids_filter, dtype=str)['Reaction ID'])
+
     for idx, reaction_folder in enumerate(sorted(os.listdir(root_dir))):
+        if allowed_ids is not None and reaction_folder not in allowed_ids:
+            continue
         reaction_folder_path = os.path.join(root_dir, reaction_folder)
-        
+
         if os.path.isdir(reaction_folder_path):
             debug = args.debug and idx < 3
             ezyme1_result, ezyme2_result = process_folder(reaction_folder_path, args.many_pairs, debug=debug)

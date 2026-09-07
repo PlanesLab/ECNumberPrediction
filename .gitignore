@@ -28,6 +28,84 @@ results/logs/
 
 # BridgIT temporary extraction directory
 methods/BridgIT/input/**/temp_extracted/
+methods/BridgIT/input/kegg500_bridgit_batch*/
+methods/BridgIT/input/reduced_inputs_KEGG_*/
 
 # Selenzyme per-reaction result cache (large, reproducible)
 results/SelenzymeRF/
+
+# --- Large per-seed/per-run artifacts, regenerable from the run_*.sh pipelines ---
+# (none of the following are tracked; listed explicitly so a future `git add -A`
+# never accidentally stages them before a GitHub push)
+
+# BEC-Pred: per-seed fine-tuned checkpoints (10-15GB each) and prepared training DBs
+# (bert_class_ec_final/, trained_512/, metanetx/ are the original small baseline
+# checkpoints and stay trackable / already tracked)
+methods/BEC-Pred/BEC-Pred_code/model/rhea_*/
+methods/BEC-Pred/BEC-Pred_code/model/metanetx_seed*/
+methods/BEC-Pred/BEC-Pred_code/DB_*/
+methods/BEC-Pred/BEC-Pred_code/results/
+
+# Theia: per-seed trained models and per-fold encoded DB splits
+methods/theia/theia_code/theia/models_*/
+methods/theia/theia_code/theia/DB_rhea_*.csv
+
+# CLAIRE: per-seed prediction/embedding caches and scratch dev workspace
+methods/CLAIRE/CLAIRE_code/CLAIRE/Results/
+methods/CLAIRE/CLAIRE_code/CLAIRE/dev/
+methods/CLAIRE/CLAIRE_code/CLAIRE/fps/
+
+# SelenzymeRF: per-seed/per-split server instances (full codebase copied per run)
+# and the upstream reference-data bundles they're built from
+methods/SelenzymeRF/SelenzymeRF_code/selenzyme2*/
+methods/SelenzymeRF/SelenzymeRF_code/compressed_data/
+methods/SelenzymeRF/SelenzymeRF_code/data_2023_nocofactor/
+methods/SelenzymeRF/SelenzymeRF_code/data_update/
+methods/SelenzymeRF/SelenzymeRF_code/gitcode2023/
+
+# SIMMER: per-seed reference-DB copies and raw per-reaction output dirs
+methods/SIMMER/SIMMER_code/SIMMER/SIMMER_files*/
+methods/SIMMER/SIMMER_scripts/output/Results*/
+
+# E-zyme: per-reaction query cache/pool
+methods/E-zyme/output/outputKEGG_pool/
+
+# Rhea data pipeline: raw downloads and regenerable per-seed prepared splits
+data/Splits-Rhea/raw/
+data/Splits-Rhea/*/seed_splits/
+data/Splits-Rhea/*/baseline_prepared/
+data/Splits-Rhea/*/nocofactor_prepared/
+
+# Bootstrap/subset sample pools, regenerable from their scripts/ dirs
+data/Subsets/*/seed_pools/
+data/Subsets/*/bootstrap500_samples/
+data/Splits-DBs/MetaNetX/seed_splits/
+
+# SIMMER: per-seed/per-bootstrap query-staging CSVs, regenerable from the
+# data splits via build_rhea_nocofactor_query.py etc. (the base per-case
+# input files without a seed/query suffix, e.g. kegg_input_simmer.csv,
+# stay tracked as before)
+methods/SIMMER/SIMMER_scripts/input/*seed*.csv
+methods/SIMMER/SIMMER_scripts/input/*_query.csv
+
+# E-zyme: per-seed substrate-product pair files, regenerable via derive_sp_pairs.py
+methods/E-zyme/output/kegg_sp_pairs_seed*.csv
+
+# SelenzymeRF: metadata belonging to the upstream cloned repo, not this
+# project's own code (README already instructs cloning SelenzymeRF directly);
+# start_server.sh / start_server_noninteractive.sh are OUR modified scripts
+# and stay tracked
+methods/SelenzymeRF/SelenzymeRF_code/.gitignore
+methods/SelenzymeRF/SelenzymeRF_code/Dockerfile
+methods/SelenzymeRF/SelenzymeRF_code/Dockerfile.base
+methods/SelenzymeRF/SelenzymeRF_code/LICENSE
+methods/SelenzymeRF/SelenzymeRF_code/README.md
+methods/SelenzymeRF/SelenzymeRF_code/README.txt
+methods/SelenzymeRF/SelenzymeRF_code/selenzyme.def
+
+# oxidoreductase_study: superseded/historical variants kept on disk for
+# provenance (see the study's own README — "pre-fix numbers kept as
+# merge_bug_* files", "Non-canonical numbers kept as noncanonical_* files")
+# but not the reported result, so left out of the GitHub mirror
+results/Case2/oxidoreductase_study/merge_bug_*
+results/Case2/oxidoreductase_study/noncanonical_*

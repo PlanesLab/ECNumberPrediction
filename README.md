@@ -1,4 +1,6 @@
-# EC Number Prediction 
+# EC Number Prediction
+
+**v1.0.0** · [MIT License](LICENSE) · Josefina Arcagni, Telmo Blasco (University of Navarra)
 
 This repository contains the code and data used to evaluate computational tools for enzyme function prediction. We benchmarked multiple EC (Enzyme Commission) number prediction algorithms — spanning both **similarity-based** and **machine/deep learning** approaches — using reaction SMILES as input. The pipeline includes scripts for dataset preprocessing, tool evaluation under various conditions, performance assessment across EC hierarchy levels and classes, and visualization of results. Overall, this repository provides a reproducible and extensible framework for benchmarking EC number prediction methods and helps users identify the most suitable tool for their metabolic modeling applications.
 
@@ -10,15 +12,17 @@ This repository contains the code and data used to evaluate computational tools 
 
 
 Specifically, we assessed the tools under three conditions: 
-1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — using 20% of the KEGG 2025 database (1866 reactions). We also evaluated these using a subset of 500 Rhea 2025 reactions.
-2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. We trained the models with the training dataset and tested with the test set for each split. Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
+1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — using 20% of the KEGG 2025 database (1866 reactions). To check robustness to which reactions get sampled, this KEGG evaluation was additionally re-run on **10 independently resampled draws of 500 reactions each** ("seeds" 0–9). We also evaluated these using a subset of 500 Rhea 2025 reactions.
+2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. The **Stratified** and **Scaffold** splits were each re-run across **3 random seeds** to check sensitivity to the particular train/test partition drawn; the **Time** split is a single deterministic chronological split. We trained the models with the training dataset and tested with the test set for each split. Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
 3. We did a case study on 28 drugs and their associated enzyme-annotated degradation reactions, and used them to query against all selected methods. Additionally, we applied a Top1 and Top5 **majority voting strategy** using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred), to show the potential of combining multiple algorithms to correctly predict EC number. 
 
 ### Table of Contents: 
 - [Cite](#cite)
+- [License](#license)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Included Tools](#included-tools)
+- [Database Composition](#database-composition)
   - [SMILES Processing](#smiles-processing)
   - [E-zyme / E-zyme2](#e-zyme--e-zyme2)
   - [BridgIT](#bridgit)
@@ -40,6 +44,12 @@ For more information, please refer to:
   
 ## Cite
 
+If you use this repository, please cite it — see [`CITATION.cff`](CITATION.cff) for citation metadata (BibTeX/APA export available via GitHub's "Cite this repository" button).
+
+## License
+
+[MIT](LICENSE)
+
 ## Project Structure
 The code has the following structure: 
 
@@ -59,6 +69,8 @@ ECNumberPrediction/
 │   ├── Case2
 │   ├── CaseStudy
 │   └── MajorityVote
+├── CITATION.cff
+├── LICENSE
 └── README.md
 ```
 
@@ -99,6 +111,17 @@ Each method in the `methods/` folder may have its own installation requirements.
 | **CLAIRE**     | 2025     | ML       | ECREACT          | Contrastive learning, rxnfp embeddings, differential reaction fingerprints                             | [Yes (GitHub)](https://github.com/zishuozeng/CLAIRE)         |
 
 *The table above summarizes the tools used, detailing their year of release, type (SB: similarity-based or ML: machine learning), associated databases, key features, and availability of open-source code.*
+
+## Database Composition
+
+| Database | Version | Reactions (EC-assigned) | 1. Oxidoreductases | 2. Transferases | 3. Hydrolases | 4. Lyases | 5. Isomerases | 6. Ligases | 7. Translocases |
+|:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **MetaNetX** | MNXref 4.5 (2025-08) | 37,829 | 15,183 | 11,144 | 7,057 | 2,106 | 786 | 1,438 | 115 |
+| **ECREACT** | 1.0 | 56,279 | 13,198 | 31,954 | 5,005 | 3,512 | 1,141 | 1,263 | 206 |
+| **KEGG** | 2025 release | 7,780 | 2,641 | 2,495 | 1,148 | 833 | 337 | 310 | 16 |
+| **Rhea** | 2025 snapshot (Expasy `ftp.expasy.org/databases/rhea/tsv/`, downloaded 2026-08-14) | 7,316 | 2,532 | 2,301 | 967 | 834 | 337 | 267 | 78 |
+| **MetaCyc** | not recorded (bundled with SIMMER's upstream reference DB, `methods/SIMMER/SIMMER_code/SIMMER/SIMMER_files/chem_data/`) | 6,444 | 2,213 | 1,830 | 931 | 864 | 505 | 99 | 2 |
+
 
 ### SMILES Processing
 
@@ -174,6 +197,8 @@ A summary of canonicalized vs. failed reactions is printed per file.
 
 ## Follow the steps below for implementing each of the tools included in the `methods/` folder:
 
+Every runner script below (`methods/<Tool>/run_<tool>.sh`) processes the configured cases (Case 1, Case 2, and/or CaseStudy, as applicable per tool) and writes its output CSV to `results/<case>/<Tool>.csv`. This is the same for all tools and is not repeated per tool below — see [Results](#results) for how those outputs are merged and scored.
+
 ### E-zyme / E-zyme2
 
 1. Create & activate venv:
@@ -194,7 +219,7 @@ chmod +x methods/E-zyme/run_ezyme.sh
 bash methods/E-zyme/run_ezyme.sh
 ```
 
-This will run the script for Case 1 and Case Study and the *result* CSV files for E-zyme and E-zyme2 will both be saved in the `results/` folder under the corresponding case folders with the tool name: `E-zyme.csv`.
+Runs Case 1 and Case Study; E-zyme and E-zyme2 both output as `E-zyme.csv`.
 
 ### BridgIT
 
@@ -215,9 +240,7 @@ chmod +x methods/BridgIT/run_BridgIT.sh
 bash methods/BridgIT/run_BridgIT.sh
 ```
 
-*Notes:* BridgIT can only be accessed through its own server in https://lcsb-databases.epfl.ch/Bridgit, a user account needs to be created to access it. The first part of the bash file will process reaction SMILES and create the necessary files in `methods/BridgIT/input/` to input in their web server. Once the results are ready, download them from the server and place them in the `methods/BridgIT/output/` folder. The steps for extracting the results are in the second part of the bash file. 
-
-This will run the script for Case 1 and Case Study and the *result* csv files will be saved in the `results/` folder under the corresponding case folders with the tool name: `BridgIT.csv`. 
+*Notes:* BridgIT can only be accessed through its own server in https://lcsb-databases.epfl.ch/Bridgit, a user account needs to be created to access it. The first part of the bash file will process reaction SMILES and create the necessary files in `methods/BridgIT/input/` to input in their web server. Once the results are ready, download them from the server and place them in the `methods/BridgIT/output/` folder. The steps for extracting the results are in the second part of the bash file. Runs Case 1 and Case Study.
 
 ### SelenzymeRF
 
@@ -247,7 +270,7 @@ chmod +x /methods/SelenzymeRF/run_selenzymerf.sh
 bash /methods/SelenzymeRF/run_selenzymerf.sh
 ```
 
-This will run the script for all cases and the *result* csv files will be saved in the `results/` folder under the corresponding case folders with the tool name: `SelenzymeRF.csv`.
+Runs all cases; output as `SelenzymeRF.csv`.
 
 ### SIMMER
 
@@ -271,7 +294,7 @@ chmod +x methods/SIMMER/run_SIMMER.sh
 bash methods/SIMMER/run_SIMMER.sh
 ```
 
-This will run the script for all cases and the *result* csv files will be saved in the `results/` folder under the corresponding case folders with the tool name: `SIMMER.csv`.
+Runs all cases; output as `SIMMER.csv`.
 
 ### Theia 
 
@@ -298,7 +321,7 @@ chmod +x methods/theia/run_theia.sh
 bash methods/theia/run_theia.sh
 ```
 
-This will run the script for all cases and the *result* csv files will be saved in the `results/` folder under the corresponding case folders with the tool name: `theia.csv`.
+Runs all cases; output as `theia.csv`.
 
 ### BEC-Pred 
 
@@ -318,7 +341,7 @@ chmod +x methods/BEC-Pred/run_becpred.sh
 bash methods/BEC-Pred/run_becpred.sh
 ```
 
-This will run the script for all cases and the *result* csv files will be saved in the `results/` folder under the corresponding case folders with the tool name: `BEC-Pred.csv`.
+Runs all cases; output as `BEC-Pred.csv`.
 
 ### CLAIRE
 
@@ -348,7 +371,7 @@ chmod +x methods/CLAIRE/run_claire.sh
 bash methods/CLAIRE/run_claire.sh
 ```
 
-This will run CLAIRE for the configured cases and save result CSV files under the corresponding case folders in `results/` with the tool name: `CLAIRE.csv`.
+Runs the configured cases; output as `CLAIRE.csv`.
 
 ## Results
 
@@ -356,73 +379,118 @@ Results are organized in subfolders inside `results/`:
 
 - `results/Case1/` – Results for the first evaluation case (queried all methods with their original dataset tested with KEGG reaction queries).
 
-- `results/Case2/` – Results for the second evaluation case (five open-source methods trained on 80% of MetaNetX dataset and queried on the other 20%).
+- `results/Case2/` – Results for the second evaluation case (five open-source methods trained and tested on different datasets and data splits).
 
 - `results/CaseStudy/` – Results for the Case Study (queries all methods with their original dataset using 28 drug-associated reactions).
 
 - `results/MajorityVote/` – Top1 and Top5 majority voting strategies using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred). 
 
+
+- `results/Case1/kegg500_bootstrap_analysis/` – per-seed metrics and figures for the per-seed KEGG-500 bootstrap re-run (10 fresh 500-reaction samples, all 8 methods), including a precomputed pairwise significance comparison. See [KEGG-500 Bootstrap Analysis & Statistical Significance](#kegg-500-bootstrap-analysis--statistical-significance).
+- `results/Case1/kegg500_bootstrap_full_coverage/` – the same 10 seeds re-scored on a "full coverage" subset (only reactions where all 8 methods returned a prediction), so Coverage differences can't drive the MCC/Precision/Recall comparison.
+- `results/Case2/results-splits/` – per-seed, per-split raw predictions and aggregated metrics for the Rhea Stratified/Time/Scaffold split comparison. See [Rhea Splits Comparison](#rhea-splits-comparison).
+- `results/Case2/OxidoreductaseStudy/` – the cofactor-stripping (no-cofactor) study for SIMMER and BEC-Pred. See [Cofactor-Stripping Study](#cofactor-stripping-study).
+
 To reproduce the metrics and figures used in the paper for each case, follow the steps below:
 
 ### Case 1
 
-1. Merge all tool CSV outputs into merged_output.csv:
+1. Merge all tool CSV outputs:
 ```bash
-python3 results/Case1/join_results.py
+python3 results/Case1/join_results.py \
+  --predictions_dir results/Case1/KEGG-1.8K \
+  --ground_truth_csv data/Subsets/KEGG/kegg_reactions_current_test.csv \
+  --output results/Case1/merged_output.csv
 ```
-Output: results/Case1/merged_output.csv
 
 2. Compute evaluation metrics:
 ```bash
 python3 results/Case1/get_metrics.py
 ```
-Output: results/Case1/evaluation_summary.csv
+Output: `results/Case1/evaluation_summary.csv`
 
 3. Generate plots:
 ```bash
 Rscript results/Case1/metrics-case1.R
 ```
-The plot will be saved in `results/Case1/case1_plot.png`.
+
+4. Bootstrap-resample the same split for confidence estimates (10 resamples with replacement):
+```bash
+python3 results/Case1/bootstrap_metrics.py
+```
+Output: `results/Case1/bootstrap_metrics.csv` (per-seed, per-method) and `results/Case1/bootstrap_summary.csv` (mean ± std across seeds).
+
+#### KEGG-500 Bootstrap Analysis & Statistical Significance
+
+A sturdier check than step 4: Case 1 re-run on **10 freshly-resampled 500-reaction draws** ("seeds" 0–9) instead of one fixed split, all 8 methods.
+
+- `results/Case1/kegg500_bootstrap/` – per-seed merged predictions.
+- `results/Case1/kegg500_bootstrap_full_coverage/` – same seeds, restricted to reactions all 8 methods answered (isolates accuracy from coverage differences).
+- `results/Case1/kegg500_bootstrap_analysis/` – per-seed metrics and a pairwise MCC significance comparison (`case1_mcc_method_x_seed_withPVALS.csv`), plus the figures (Panel A: Coverage/Precision/Recall/MCC per method; Panel B: per-class breakdown; Panel C: Top-1 vs Top-5):
+```bash
+Rscript results/Case1/kegg500_bootstrap_analysis/full_figure_kegg500_bootstrap.R
+Rscript results/Case1/kegg500_bootstrap_analysis/full_figure_kegg500_bootstrap_full_coverage.R
+```
 
 ### Case 2
 
-1. Merge all tool CSV outputs into merged_output.csv:
+1. Merge all tool CSV outputs (`--methods` picks out just the prediction files, since `results-metanetx/` also holds derived outputs):
 ```bash
-python3 results/Case2/join_results.py
+python3 results/Case2/join_results.py \
+  --predictions_dir results/Case2/results-metanetx \
+  --methods BEC-Pred CLAIRE SelenzymeRF SIMMER Theia \
+  --ground_truth_csv data/Splits-DBs/MetaNetX/test.tsv \
+  --output results/Case2/merged_output.csv
 ```
-Output: results/Case2/merged_output.csv
 
 2. Compute evaluation metrics:
 ```bash
 python3 results/Case2/get_metrics.py
 ```
-Output: results/Case2/evaluation_summary.csv
+Output: `results/Case2/evaluation_summary.csv`
 
 3. Generate plots:
 ```bash
 Rscript results/Case2/results-metanetx/metrics-case2.R
 ```
-The plot will be saved in `results/Case2/results-metanetx/case2_plot.jpg`.
+Output: `results/Case2/case2_plot.png`
+
+#### Rhea Splits Comparison
+
+The 5 open-source methods (SelenzymeRF, SIMMER, Theia, BEC-Pred, CLAIRE) were also compared across three ways of splitting Rhea 2025 into train/test (`data/Splits-Rhea/{Stratified,Time,Scaffold}/`): **Stratified** (random), **Time-based** (train on older reactions, test on newer) and **Scaffold-aware** (test reactions structurally unlike train). Stratified and Scaffold were each re-run across **3 seeds** to check sensitivity to the partition drawn; Time is a single deterministic split.
+
+- `results/Case2/results-splits/seed_runs/` – per-method predictions, ground truth, and merged outputs for each split/seed.
+- `results/Case2/results-splits/seed_summary.py` → `seed_summary.csv` – aggregated per-split, per-method metrics (mean ± std across seeds).
+
+#### Cofactor-Stripping Study
+
+Does stripping generic metabolic cofactors (NAD(H), NADP(H), FAD, etc. via `methods/SIMMER/SIMMER_scripts/strip_cofactors.py`) help or hurt EC prediction? **SIMMER** and **BEC-Pred** were each run on the Rhea Stratified split with and without cofactors:
+```bash
+bash methods/SIMMER/run_SIMMER_rhea_nocofactor.sh
+bash methods/BEC-Pred/run_BECPred_rhea_stratified_nocofactor.sh
+```
+**Finding:** stripping cofactors *helps* SIMMER (class 1 MCC 0.69→0.79) but *hurts* BEC-Pred (0.86→0.80) — the two methods lean on cofactor presence in opposite directions. Full write-up in `results/Case2/OxidoreductaseStudy/README.md`.
 
 ### CaseStudy
-1. Merge all tool CSV outputs into merged_output.csv:
+1. Merge all tool CSV outputs into merged_output_case3.csv:
 ```bash
 python3 results/CaseStudy/join_results.py
 ```
-Output: results/CaseStudy/merged_output.csv
+Output: `results/CaseStudy/merged_output_case3.csv`
 
 2. Generate plots:
 ```bash
 Rscript results/CaseStudy/case_study_heatmap.R
 ```
-The plot will be saved in `results/CaseStudy/casestudyplot.png`.
+Output: `results/CaseStudy/casestudyplot_final.jpg` (two panels — see below) and `results/CaseStudy/majority_vote_results_final.csv`. Requires R ≥ 4.4 with `ggplot2`, `dplyr`, `tidyr`, `readr`, `stringr`, `cowplot`, `RColorBrewer`, `tibble`, `purrr`, `readxl`.
+
+**Panel A** is a per-drug heatmap: rows are the 28 drugs (ordered by true EC), columns are the 8 methods plus **MV-1**/**MV-5** — a Top-1/Top-5 majority vote across SelenzymeRF, SIMMER, Theia and BEC-Pred, computed inline in this script — colored by hit type (`Top 1` / `Top 5` / `No hit` / `No prediction`), with a left-hand color strip grouping drugs by EC subsubclass. **Panel B** is a stacked bar chart of each method's (+ MV-1/MV-5's) Top-1 hit count, broken down by true EC class.
+
 
 ### MajorityVote 
 
 
-A tool to combine multiple EC number prediction outputs using weighted majority voting across multiple prediction methods.
-
----
+A standalone, general-purpose CLI tool (`results/MajorityVote/majority_vote.py`) that combines multiple EC number prediction outputs using a **points-weighted** majority vote across an arbitrary set of methods and an arbitrary top-N window.
 
 #### How It Works
 

@@ -66,4 +66,9 @@ test_data = np.concatenate([
 # -------------------------------
 # Save combined array
 # -------------------------------
-np.save(test_out, test_data)
+# np.save(path, ...) silently appends ".npy" unless path already ends in exactly that -- since
+# test_out ends in ".npz" (the extension query_claire.py's np.load() call expects literally),
+# passing an open file handle instead of the path string bypasses that auto-append, so the file
+# lands at exactly test_out.
+with open(test_out, "wb") as f:
+    np.save(f, test_data)
