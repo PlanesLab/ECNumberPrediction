@@ -3,22 +3,9 @@ Script: query_claire.py
 Author: Josefina Arcagni
 Date: 2025-09-11
 
-Description:
-    This script performs EC Number prediction for chemical reactions using the CLAIRE method.
-    It loads test and training data, reaction IDs, and model files, then runs inference to predict EC numbers.
-    The script is designed to be executed from the command line with specified input file paths and parameters.
-
-Args:
-    --test_data_path (str): Path to the test data (.npy file) containing reaction fingerprints.
-    --train_data_path (str): Path to the training data (.pkl file) containing model lookup fingerprints.
-    --train_labels_path (str): Path to the training labels (.pkl file) containing EC numbers.
-    --test_csv_path (str): Path to the CSV file containing reaction IDs for the test set.
-    --reaction_id_col (str): Column name in the CSV file that contains reaction IDs.
-    --model_path (str): Path to the pretrained model (.pth file).
-    --gmm_path (str): Path to the GMM ensemble (.pkl file).
-
-Returns:
-    Saves prediction results for the test set, including top-k EC number predictions per reaction.
+Predicts EC numbers for reactions via CLAIRE: loads test/train fingerprints,
+labels, and model files, then runs inference and saves top-k predictions
+per reaction. See --help for arguments.
 """
 import pickle
 import numpy as np

@@ -1,27 +1,17 @@
 """
-Generate a seeded, EC-stratified 90/10 train/test split of the MetaNetX
+Generates a seeded, EC-stratified 90/10 train/test split of the MetaNetX
 Case 2 reaction pool.
 
-data/Splits-DBs/MetaNetX/{train,test}.tsv were pure carry-overs from before
-this repo existed (no generating script was ever committed) at a fixed
-90/10 ratio (34047/3784 -- confirmed by direct measurement, despite the
-README's "80/20" claim). This script combines them back into one pool and
-draws a fresh stratified 90/10 split per --seed, reusing the same
-stratify-by-EC-subsubclass pattern as data/Splits-Rhea/scripts/stratified_split.py
-and data/Subsets/KEGG/scripts/generate_seed_kegg_subset.py.
-
-NOTE: the original train.tsv and test.tsv disagree on the SMILES column
-name ('rxn' vs 'reaction_smiles') -- a real inconsistency in the existing
-data. This script standardizes on 'reaction_smiles' for both outputs (the
-name run_SIMMER.sh's Case 2 block already expects for both its train.tsv
-and test.tsv reads), so no downstream script needs further column-name
-patching for that specific issue.
+Combines the existing train.tsv/test.tsv back into one pool and draws a
+fresh stratified split per --seed, using the same stratify-by-EC-subsubclass
+pattern as stratified_split.py and generate_seed_kegg_subset.py. Standardizes
+the SMILES column as 'reaction_smiles' (the original files disagreed: 'rxn'
+vs 'reaction_smiles').
 
 Writes, per seed:
   <output_dir>/train.tsv    (90%, columns reaction_id, reaction_smiles, substrates_products, ec)
   <output_dir>/test.tsv     (10%, same columns)
-  <output_dir>/queries.txt  (test.tsv's reaction_smiles, one per line, same row order as test.tsv --
-                              required by Theia/BEC-Pred/CLAIRE's positional query scripts)
+  <output_dir>/queries.txt  (test.tsv's reaction_smiles, one per line, same row order)
 """
 
 import argparse

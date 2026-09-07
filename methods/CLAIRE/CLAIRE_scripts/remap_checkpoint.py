@@ -1,20 +1,13 @@
 """
-Remap a train-pred_rxn_EC.py checkpoint's state_dict keys to the naming convention
-dev/prediction/inference_EC.py's LayerNormNet expects.
+Remaps a train-pred_rxn_EC.py checkpoint's state_dict keys to the naming
+inference_EC.py's LayerNormNet expects.
 
-The two files each define their OWN LayerNormNet class (not shared/imported) that are
-structurally the same 5-layer MLP (4x [Linear->LayerNorm->ReLU] + 1 final Linear) but
-named differently: training's ModuleList-based class produces state_dict keys like
-"layers.0.0.weight" (Sequential block 0's Linear), while inference's explicitly-named
-class expects "fc1.weight" etc. Loading a training checkpoint directly into the
-inference model raises "Missing/Unexpected key(s)" for every parameter.
+The two files define separate LayerNormNet classes for the same 5-layer MLP,
+with different key naming ("layers.0.0.weight" vs "fc1.weight"), so a training
+checkpoint doesn't load directly into the inference model.
 
-This assumes --num_layers 5 (train-pred_rxn_EC.py's default, unchanged by any caller in
-this repo): layers.0 -> fc1/ln1, layers.1 -> fc2/ln2, layers.2 -> fc4/ln4,
-layers.3 -> fc5/ln5, layers.4 (final plain Linear, no LayerNorm) -> fc3. This mapping
-was derived by matching parameter shapes/position between the two class definitions,
-not from any existing documentation -- inference_EC.py's own forward() confirms the
-fc1/ln1 -> fc2/ln2 -> fc4/ln4 -> fc5/ln5 -> fc3 ordering.
+Assumes --num_layers 5: layers.0 -> fc1/ln1, layers.1 -> fc2/ln2,
+layers.2 -> fc4/ln4, layers.3 -> fc5/ln5, layers.4 -> fc3 (final plain Linear).
 """
 
 import argparse

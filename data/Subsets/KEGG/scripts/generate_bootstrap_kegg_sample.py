@@ -1,20 +1,14 @@
 """
-Generate a seeded bootstrap sample (n=100, with replacement) of the full KEGG
-reaction pool, for Case 1's 10x100-with-replacement bootstrap.
+Generates a seeded bootstrap sample (default n=100, with replacement) of the
+full KEGG reaction pool, for Case 1's bootstrap re-run.
 
-Pool = data/Splits-DBs/KEGG/{train,test}.tsv combined (7782 reactions) -- same pool
-generate_seed_kegg_subset.py draws from, but this does a genuine bootstrap resample
-(uniform random, WITH replacement -- a reaction can appear more than once in a
-single seed's sample) instead of a stratified without-replacement subset, and
-defaults to a much smaller sample_size (100).
+Pool = data/Splits-DBs/KEGG/{train,test}.tsv combined (7782 reactions), same
+pool generate_seed_kegg_subset.py draws from -- but sampled uniformly with
+replacement rather than stratified without replacement.
 
-Writes the same two row-order-aligned outputs generate_seed_kegg_subset.py does, so
-every Case 1 method's run script can be repointed at a seed by swapping these two
-paths (see run_theia.sh/run_becpred.sh/etc.'s SEED convention):
-  <output_dir>/kegg_reactions_current_test.csv   (drop-in replacement, comma-separated,
-                                                    same columns as the original test CSV)
-  <output_dir>/8:2KEGGTest_canonicalized.txt      (one canonical reaction SMILES per line,
-                                                    same row order as the CSV above)
+Writes the same two row-order-aligned outputs as generate_seed_kegg_subset.py:
+  <output_dir>/kegg_reactions_current_test.csv   (drop-in replacement for the test CSV)
+  <output_dir>/8:2KEGGTest_canonicalized.txt      (one canonical SMILES per line, same order)
 """
 
 import argparse

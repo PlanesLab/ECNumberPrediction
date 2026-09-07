@@ -1,17 +1,11 @@
 """
-Download Rhea's raw distribution files needed to rebuild master.tsv from
-source, instead of relying on inherited/undocumented TSVs.
+Downloads Rhea's raw distribution files needed to rebuild master.tsv from
+source.
 
-Fetches from the official Expasy mirror (https://ftp.expasy.org/databases/rhea/tsv/):
-  - rhea-directions.tsv     RHEA_ID_MASTER, RHEA_ID_LR, RHEA_ID_RL, RHEA_ID_BI
-                            (the authoritative grouping of Rhea's 4 IDs per
-                            unique chemical transformation)
-  - rhea2ec.tsv             RHEA_ID, DIRECTION, MASTER_ID, ID (EC number) --
-                            one row per (master reaction, EC) pair; DIRECTION
-                            is always UN (undirected) since EC is assigned at
-                            the master level
-  - rhea-reaction-smiles.tsv  RHEA_ID, SMILES -- only LR and RL ids have an
-                            explicit SMILES row (BI/master do not)
+Fetches from the Expasy mirror (https://ftp.expasy.org/databases/rhea/tsv/):
+  - rhea-directions.tsv       RHEA_ID_MASTER, RHEA_ID_LR, RHEA_ID_RL, RHEA_ID_BI
+  - rhea2ec.tsv                RHEA_ID, DIRECTION, MASTER_ID, ID (EC number)
+  - rhea-reaction-smiles.tsv   RHEA_ID, SMILES (LR/RL ids only)
 
 Writes them unmodified into data/Splits-Rhea/raw/.
 """

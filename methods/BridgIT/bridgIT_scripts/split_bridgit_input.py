@@ -1,10 +1,7 @@
 """
-Split a bridgit_input.py-generated systemfile.txt + molfiles/ folder into small
-per-batch ZIPs for upload to https://lcsb-databases.epfl.ch/Bridgit (which has a
-practical per-submission size/reaction-count limit -- the original Case 1 KEGG-1.8K
-input used ~37 reactions/batch across 50 ZIPs). Generalizes the KEGG/Rhea-hardcoded
-one-off methods/BridgIT/bridgIT_scripts/bridgit_reduced_input.py into a reusable,
-argparse'd script so it can be pointed at any seed's input dir.
+Splits a bridgit_input.py-generated systemfile.txt + molfiles/ folder into
+small per-batch ZIPs for upload to https://lcsb-databases.epfl.ch/Bridgit,
+which has a per-submission size limit.
 
 Each output ZIP <output_dir>/reducedinput<i>.zip contains:
   reduced_systemfile.txt   (header + this batch's reaction rows)

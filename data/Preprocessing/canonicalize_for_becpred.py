@@ -1,20 +1,12 @@
 """
-Canonicalize a Rhea seed split's reaction SMILES for BEC-Pred, without dropping or
-reordering any rows.
+Canonicalizes a Rhea seed split's reaction SMILES for BEC-Pred.
 
-Reuses canonicalize_reaction_smiles from canonicalize_rxn_SMILES.py (the same RDKit
-logic already used for KEGG's canonicalized files), but falls back to the ORIGINAL
-SMILES on failure instead of dropping the row: BEC-Pred's eval_model.py/queries.txt
-convention is purely positional (row N of queries.txt = row N of test.tsv = row N of
-the ground truth), so silently dropping a row would desync predictions from ground
-truth for every row after it. In practice RDKit failures on already-valid Rhea
-reaction SMILES should be rare to none; this is a safety net, not the expected path.
+Falls back to the original SMILES on RDKit failure instead of dropping the row.
+BEC-Pred's queries.txt is positional, so a dropped row desyncs predictions from
+ground truth.
 
-Writes train.tsv/test.tsv (reaction_smiles + rxn columns overwritten with the
-canonical form, all other columns untouched) and queries.txt (test.tsv's now-canonical
-reaction_smiles, one per line, same row order -- regenerated FROM the canonicalized
-test.tsv rather than canonicalized independently, so it can never fall out of sync
-with it).
+Writes train.tsv/test.tsv (reaction_smiles + rxn columns canonicalized) and
+queries.txt, regenerated from the canonicalized test.tsv.
 """
 
 import argparse

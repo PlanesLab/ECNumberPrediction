@@ -1,23 +1,14 @@
 """
-Derive a single substrate/product KEGG-compound-ID pair per reaction, for
-E-zyme's webscrapper (which only accepts one substrate + one product
-compound ID per query, via cpd1/cpd2).
+Derives a single substrate/product KEGG-compound-ID pair per reaction, for
+E-zyme's webscraper (accepts only one substrate + one product per query).
 
-data/KEGG/SubstrateProductPairs82.csv (the original input) no longer exists
-under the current data/ layout, and no equivalent file exists for the
-current KEGG-1.8K test set or any seed's resample. This derives one from
-the `Equation` column (format "C00001 + C00002 <=> C00003 + C00004
-[;stoichiometric coeffs like '4 C00683']") plus, where available, the
-`R Class` column's compound pair (format "RC01422  C06554_C14149") --
-verified this session that R Class's pair members are just sorted
-alphabetically, NOT already ordered as (substrate, product), so which
-member is LHS/RHS still has to be resolved against Equation directly.
+Parses the `Equation` column, using `R Class`'s compound pair where available
+to resolve which side is substrate vs product (R Class's pair members are
+sorted alphabetically, not ordered by side).
 
-Reactions with no R Class pair fall back to: strip common cofactors
-(water, ATP/ADP, NAD(P)(H), CoA, Pi/PPi, O2, CO2, H+, ...) from both
-sides, then take the first remaining compound on each side. Reactions
-where either side is empty after filtering (e.g. purely cofactor-only
-reactions) are dropped and reported, not silently guessed.
+Falls back to stripping common cofactors (water, ATP/ADP, NAD(P)(H), CoA,
+Pi/PPi, O2, CO2, H+, ...) and taking the first remaining compound per side.
+Reactions left empty on either side after filtering are dropped and reported.
 """
 
 import argparse

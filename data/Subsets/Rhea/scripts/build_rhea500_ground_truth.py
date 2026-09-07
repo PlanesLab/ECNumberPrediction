@@ -1,27 +1,14 @@
 """
-Build ground-truth EC labels for the Rhea-500 Case 1 test set.
+Builds ground-truth EC labels for the Rhea-500 Case 1 test set.
 
-data/Subsets/Rhea/reaction_smiles.txt (500 lines, raw reaction SMILES) has no
-reaction IDs and no EC labels attached anywhere in the repo. This matches
-each of the 500 reactions, by canonical (fragment-sorted) SMILES, against
-data/Splits-Rhea/master.tsv (one row per unique Rhea transformation, columns
-REACTION_ID, REACTION_SMILES, EC_NUMBER) to recover both.
+Matches data/Subsets/Rhea/reaction_smiles.txt (500 raw SMILES, no IDs) against
+data/Splits-Rhea/master.tsv by canonical SMILES to recover reaction ID and EC.
+Matches on both the forward and side-swapped canonical SMILES, since master.tsv
+keeps only one direction (LR) per transformation.
 
-master.tsv keeps only one direction (LR) per transformation, but
-canonicalize_reaction_smiles does NOT swap reactant/product sides -- a
-reaction recorded in the opposite direction canonicalizes to a different
-string. The lookup is therefore built keyed on BOTH the forward canonical
-SMILES and the side-swapped ("reverse") canonical SMILES for every pool row,
-so matching stays direction-invariant without needing duplicate LR/RL rows
-in master.tsv itself.
-
-Writes data/Subsets/Rhea/rhea500_ground_truth.csv with columns
-`Reaction ID, Isomeric_SMILES, EC Number`, row-order aligned to
-reaction_smiles.txt/reaction_smiles_can.txt (needed by the same positional
-convention Theia/BEC-Pred/CLAIRE rely on for KEGG-1.8K). Rows with no match
-in master.tsv get `EC Number` = "" and are flagged for manual review
-rather than silently dropped, since dropping would break positional
-alignment with the SMILES text files.
+Writes data/Subsets/Rhea/rhea500_ground_truth.csv (Reaction ID, Isomeric_SMILES,
+EC Number), row-order aligned to reaction_smiles.txt. Unmatched rows get an
+empty EC Number rather than being dropped, to keep positional alignment intact.
 """
 
 import argparse

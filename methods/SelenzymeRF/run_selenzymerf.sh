@@ -27,14 +27,9 @@ else
 fi
 mkdir -p "$KEGG_OUT_DIR"
 
-# NOTE: start_server.sh is interactive (`read` prompts) and would hang forever in a
-# non-interactive SLURM batch job -- start_server_noninteractive.sh is the same
-# code/docker workflow driven by env vars instead. REMAKE_SELENZYME2=1 (default) rebuilds
-# selenzyme2/ from the unmodified compressed_data/{data_2023,seqs}.zip (no DATA_SOURCE_DIR
-# set here, so Case 1/Case Study run against the original, unfiltered reference DB).
-# SELENZYME2_DIR is seed-specific -- without it, parallel bootstrap seeds (this script run
-# 10x concurrently, one per KEGG bootstrap seed) collide on the same shared mount dir (see
-# the identical fix + explanation in the Case 2 block below).
+# start_server.sh is interactive and would hang in a SLURM batch job; start_server_noninteractive.sh
+# runs the same workflow via env vars. SELENZYME2_DIR is seed-specific so parallel bootstrap
+# seeds don't collide on the same mount dir (see the Case 2 block below).
 SELENZYME2_DIR="selenzyme2_case1_seed${SEED}" \
     bash methods/SelenzymeRF/SelenzymeRF_code/start_server_noninteractive.sh &
 SERVER_PID=$!

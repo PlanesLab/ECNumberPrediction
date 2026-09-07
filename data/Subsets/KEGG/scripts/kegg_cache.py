@@ -1,19 +1,12 @@
 """
 Shared reaction-level prediction cache for the KEGG bootstrap (Case 1, full-pool
-sampling with replacement). Each of the 10 seeds draws from the same 7780-reaction
-pool, so seeds overlap heavily -- this cache lets a method skip any reaction it has
-already predicted (in an earlier seed, or in the original fixed KEGG-1.8K Case 1 run)
-instead of re-querying it.
+sampling with replacement). The 10 seeds draw from the same 7780-reaction pool
+and overlap heavily, so this lets a method skip any reaction it already
+predicted in an earlier seed instead of re-querying it.
 
-One cache file per method at results/Case1/kegg_pool_cache/<Method>.csv, always
-normalized to columns `Reaction ID,<pred_col>` regardless of the source file's own
-column names (raw per-seed outputs and the original KEGG-1.8K outputs use
-inconsistent naming, e.g. SelenzymeRF's ID column is "Reaction" not "Reaction ID",
-BEC-Pred's Case 1 output has no ID column at all -- positional only).
-
-E-zyme is intentionally excluded: it already has its own pair-level scrape cache
-(methods/E-zyme/output/outputKEGG_pool, shared across seeds, see run_ezyme.sh),
-so it doesn't need this on top.
+One cache file per method at results/Case1/kegg_pool_cache/<Method>.csv,
+normalized to columns `Reaction ID,<pred_col>`. E-zyme is excluded -- it has
+its own pair-level scrape cache (methods/E-zyme/output/outputKEGG_pool).
 
 Subcommands:
   seed    Import an existing results file (original or a past seed's raw output)

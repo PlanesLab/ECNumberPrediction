@@ -1,41 +1,15 @@
 """
 Build a cofactor-stripped copy of the SelenzymeRF reference database
-(data_2023/), for the oxidoreductase no-cofactor ablation (mirrors what
-methods/SIMMER/SIMMER_scripts/strip_cofactors.py does for SIMMER's training
-data, adapted to SelenzymeRF's MetaNetX-ID-based reference DB format).
+(data_2023/), for the oxidoreductase no-cofactor ablation.
 
-Unlike SIMMER (whose reference DB is built directly from reaction SMILES),
-SelenzymeRF's matching engine (quickRsim.py) works off compound IDs:
-  - reac_prop.tsv's mnx_equation column: "N MNXM_ID + N MNXM_ID = N MNXM_ID ..."
-  - FP_Morg.npz: per-compound-ID Morgan fingerprints (compound-level; a
-    compound's own fingerprint doesn't depend on which reaction it's in, so
-    this file needs NO changes)
-  - FP_MorgRF.npz: per-(compound-ID, reaction-ID) reacting-fragment table,
-    precomputed via RXNMapper over the *whole* reference DB by
-    data_update/make_fingerprint_atomMap.py (which needs raw chem_prop.tsv +
-    RXNMapper and was never rerun here -- see session notes). We do NOT
-    recompute reacting fragments from scratch; instead we DROP the rows
-    belonging to (cofactor compound, modified reaction) pairs, an
-    approximation that keeps the surviving (non-cofactor) compounds'
-    already-computed reacting-fragment data as-is rather than re-deriving it
-    from a re-mapped, cofactor-free reaction.
+Strips reac_smi.csv via SIMMER's strip_cofactor_components. FP_Morg.npz
+(per-compound) needs no changes. FP_MorgRF.npz rows for (cofactor compound,
+modified reaction) pairs are dropped rather than recomputed -- an
+approximation, since reacting-fragment fingerprints were never re-derived
+via RXNMapper.
 
-Also strips the assembled SMILES side of the DB (reac_smi.csv), reusing
-methods/SIMMER/SIMMER_scripts/cofactors.py's strip_cofactor_components
-directly -- reac_smi.csv is keyed the same way (RID,SMILES, left>>right) as
-SIMMER's REACTION_SMILES column.
-
-Cofactor identification: chem_prop.tsv (MNXM_ID -> SMILES) is downloaded
-fresh from metanetx.org (MNXref 4.5, 2025-08) since the bundled data_2023/
-snapshot (2023-08) doesn't include it. Spot-checked against reac_prop.tsv's
-own IDs before use: MNXM1=H+, MNXM3=ATP, MNXM8=NAD+, MNXM9=phosphate,
-MNXM10=NADH, MNXM37=L-glutamine (not a cofactor) all resolved correctly
-despite the ~2-year version gap -- these foundational compound IDs are
-stable across MNXref releases. Only compound IDs actually referenced by
-reac_prop.tsv (~19K of chem_prop.tsv's ~1.5M rows) are looked up, so this is
-fast; ~5K of those aren't found in the 2025 file (deprecated/merged IDs) and
-are simply never flagged as cofactors (acceptable: cofactors are exactly the
-oldest, most stable IDs, confirmed above).
+Cofactor identification uses chem_prop.tsv (MNXM_ID -> SMILES) from MNXref
+4.5 (2025-08), since the bundled 2023 snapshot lacks it.
 
 Usage:
     python strip_selenzyme_db_cofactors.py \

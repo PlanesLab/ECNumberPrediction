@@ -207,11 +207,9 @@ for SPLIT in $RHEA_SPLITS; do
         --epoch "$EPOCHS" \
         --seed "$SEED"
 
-    # train-pred_rxn_EC.py and dev/prediction/inference_EC.py each define their OWN LayerNormNet
-    # class -- structurally the same 5-layer MLP, but named differently (training's ModuleList
-    # produces "layers.0.0.weight" etc, inference's explicitly-named class expects "fc1.weight"
-    # etc), so query_claire.py's model.load_state_dict() fails outright on a raw training
-    # checkpoint ("Missing/Unexpected key(s)"). Remap before use; verified this loads cleanly.
+    # train-pred_rxn_EC.py and inference_EC.py define separate LayerNormNet classes with
+    # different state_dict key naming, so query_claire.py fails to load a raw training
+    # checkpoint. Remap before use.
     /scratch/jarcagniriv/Envs/claire/bin/python "$CLAIRE_SCRIPTS/remap_checkpoint.py" \
         --input "$RHEA_MODEL_DIR/train_final.pth" \
         --output "$RHEA_MODEL_DIR/train_final_remapped.pth"

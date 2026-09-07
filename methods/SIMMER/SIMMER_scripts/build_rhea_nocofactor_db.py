@@ -1,13 +1,10 @@
 """
-Build a SIMMER2-compatible reference database (chem_data/ + prot_data/) from
+Builds a SIMMER2-compatible reference database (chem_data/ + prot_data/) from
 a no-cofactor Rhea Stratified training split.
 
-Rhea's REACTION_ID is not unique per row (the same base reaction can carry
-several different EC labels, one per row -- e.g. broad-specificity kinases).
-SIMMER's dictionaries are keyed by the "reaction" id, so a bare REACTION_ID
-would silently collide and drop rows. We therefore key each DB entry by
-"{REACTION_ID}_{EC_NUMBER}", mirroring how the upstream SIMMER data explodes
-multi-EC MetaCyc rows.
+Keys each entry by "{REACTION_ID}_{EC_NUMBER}", since Rhea's REACTION_ID isn't
+unique per row (broad-specificity reactions carry multiple EC labels) and a
+bare REACTION_ID key would collide and drop rows.
 
 Usage:
     python build_rhea_nocofactor_db.py \

@@ -1,22 +1,14 @@
 """
-Generate a seeded, EC-stratified resample of the KEGG-1.8K Case 1 test set.
+Generates a seeded, EC-stratified resample of the KEGG-1.8K Case 1 test set.
 
 Pool = data/Splits-DBs/KEGG/{train,test}.tsv combined (7782 reactions). Draws
-a stratified subset the same size as the original KEGG-1.8K test set (1866
-reactions, ~20% of the pool) for a given --seed, mirroring the sampling
-approach the README describes ("20% of the KEGG 2025 database") and reusing
-data/Splits-Rhea/scripts/stratified_split.py's stratify-by-EC-subsubclass
-pattern.
+a stratified subset the same size as the original test set (1866 reactions)
+for a given --seed, using stratified_split.py's EC-subsubclass pattern.
 
-Writes two row-order-aligned outputs (verified this session: the existing
-kegg_reactions_current_test.csv and 8:2KEGGTest_canonicalized.txt are in
-exact positional correspondence, which Theia/BEC-Pred/CLAIRE's query scripts
-rely on) so every Case 1 method's run script can be repointed at a seed by
-swapping these two paths:
-  <output_dir>/kegg_reactions_current_test.csv   (drop-in replacement, comma-separated,
-                                                    same columns as the original test CSV)
-  <output_dir>/8:2KEGGTest_canonicalized.txt      (one canonical reaction SMILES per line,
-                                                    same row order as the CSV above)
+Writes two row-order-aligned outputs so any Case 1 run script can be
+repointed at a seed by swapping these two paths:
+  <output_dir>/kegg_reactions_current_test.csv   (drop-in replacement for the test CSV)
+  <output_dir>/8:2KEGGTest_canonicalized.txt      (one canonical SMILES per line, same order)
 """
 
 import argparse

@@ -138,17 +138,11 @@ for SPLIT in $RHEA_SPLITS; do
         echo "Skipping Theia training for $SPLIT seed $SEED ($MODEL_PT already exists)"
     fi
 
-    # theia-cli's `predict` command does NOT take a model path -- it only loads models from a
-    # fixed platformdirs data directory (~/.local/share/theia/) by a "source.name" id, resolved
-    # internally to "<source>-0-<name>.pt"/"-le.pkl"/"-background.pkl" plus a shared
-    # "<source>-map.pkl" (see theia/data_manager.py's DataManager.get_path and
-    # theia/web/helpers.py's load_models -- confirmed by reading them after every prediction came
-    # back "IndexError: list index out of range" from model_id.split(".") on what we were
-    # previously passing, a raw filesystem path with no "."). Our train.py output already happens
-    # to use the exact "<source>-<split>-<name>" file-naming convention theia-cli expects, so no
-    # renaming is needed -- just symlink the 3 files into place, plus a stub "-map.pkl" (drfp_map
-    # is only read by the --explain code path we don't use, but load_models() unconditionally
-    # unpickles the file, so it must exist and be a valid pickle).
+    # theia-cli's `predict` command loads models from a fixed platformdirs data directory
+    # (~/.local/share/theia/) by a "source.name" id, resolved to "<source>-0-<name>.pt" /
+    # "-le.pkl" / "-background.pkl" plus a shared "-map.pkl". Symlink the 3 output files
+    # into place, plus a stub "-map.pkl" (unused by our code path, but load_models()
+    # always unpickles it, so it must exist).
     THEIA_DATA_DIR="$(python3 -c 'import platformdirs; print(platformdirs.user_data_path("theia", "daenuprobst"))')"
     mkdir -p "$THEIA_DATA_DIR"
     for suffix in ".pt" "-le.pkl" "-background.pkl"; do

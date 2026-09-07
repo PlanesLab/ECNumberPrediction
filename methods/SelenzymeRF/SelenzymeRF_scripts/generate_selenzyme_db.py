@@ -3,42 +3,15 @@ Script: generate_selenzyme_db.py
 Author: Josefina Arcagni
 Date: 2025-09-09 (rewritten 2026-08-15)
 Description:
-    Build a filtered copy of the SelenzymeRF reference database (the unzipped
-    `data_2023/` MetaNetX snapshot bundled at
-    methods/SelenzymeRF/SelenzymeRF_code/compressed_data/data_2023.zip) that
-    EXCLUDES every reaction present in a given seed's test split, so that the
-    Selenzyme server can be queried against that test split without being able
-    to "cheat" by finding the exact reaction (and its EC number) already sitting
-    in its own reference database.
+    Build a filtered copy of the SelenzymeRF reference database (data_2023/)
+    that excludes reactions in a given seed's test split, to prevent leakage
+    when querying the server against that split.
 
-    Only the reaction-keyed lookup tables that drive query matching need to be
-    filtered: reac_prop.tsv, reac_seqs.tsv and reac_smi.csv are all keyed (in
-    their first column) by MNXR-style MetaNetX reaction IDs, and the server's
-    matching loop (quickRsim.run -> `for r2 in rsp:`, where
-    `rsp = reacSubsProds(reac_prop.tsv)`) iterates *only* over reactions that
-    are present in reac_prop.tsv. Everything else the server touches
-    (EC<->reaction maps, reaction-id<->SMILES maps, reaction-id<->sequence
-    maps) is itself built from reac_prop.tsv/reac_seqs.tsv/reac_smi.csv, so
-    filtering those three files is what actually prevents leakage.
-
-    IMPORTANT (see also the "npz filtering" note in the project report): the
-    two fingerprint files, FP_Morg.npz and FP_MorgRF.npz, do NOT need to be
-    filtered or rebuilt:
-      - FP_Morg.npz is a per-COMPOUND fingerprint table (arrays 'x'=fingerprint,
-        'y'=MNXM compound id). It has no notion of "reaction" at all and is
-        shared/reused verbatim regardless of which reactions are excluded.
-      - FP_MorgRF.npz is a per-(compound, reaction) reacting-fragment table
-        (arrays 'x'=fingerprint, 'y'=MNXM compound id, 'z'=MNXR reaction id,
-        'd'=distances). It IS reaction-indexed via the 'z' column, but it is
-        only ever looked up as `rfDict[r2]` inside the `for r2 in rsp:` loop
-        described above -- i.e. only for reaction ids that already passed the
-        reac_prop.tsv filter. Leftover FP_MorgRF.npz rows for excluded test
-        reactions are simply inert (never looked up), not a leak vector.
-    This was verified by reading gitcode2023/selenzyPro/{selenzy,quickRsim,
-    rf_functions}.py and by inspecting the .npz arrays directly (FP_MorgRF.npz's
-    'z' column holds MNXR-style reaction ids, confirmed against reac_prop.tsv).
-    Both npz files are therefore passed through UNCHANGED (symlinked/copied) to
-    the output directory.
+    Filters reac_prop.tsv, reac_seqs.tsv, reac_smi.csv (keyed by MNXR reaction
+    id; everything else the server uses derives from these). FP_Morg.npz and
+    FP_MorgRF.npz are passed through unchanged: FP_Morg.npz is per-compound,
+    not per-reaction, and FP_MorgRF.npz rows for excluded reactions are simply
+    never looked up.
 
 Usage:
     python generate_selenzyme_db.py \

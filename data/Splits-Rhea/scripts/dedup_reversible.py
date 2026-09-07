@@ -1,15 +1,9 @@
 """
-Collapse Rhea's reversible reaction pairs (forward/reverse SMILES of the
-same underlying reaction, e.g. RHEA LR/RL entries) into a single row each,
-so no reaction is represented twice under the same EC number.
+Superseded by build_master_from_raw.py; kept for provenance.
 
-For every reaction the reverse SMILES (products>>reactants) is computed and
-paired against the rest of the dataset. If the exact reverse (same EC) is
-also present, only one of the two directions is kept (the lower
-REACTION_ID, for reproducibility). If no reverse partner exists, the row is
-kept as-is. Rows sharing a REACTION_ID with a *different* EC (multi-label
-reactions) are left untouched — only forward/reverse duplication is
-collapsed.
+Collapses Rhea's forward/reverse reaction pairs (same reaction, same EC)
+into a single row each, keeping the lower REACTION_ID. Rows sharing a
+REACTION_ID with a different EC are left untouched.
 """
 
 import argparse

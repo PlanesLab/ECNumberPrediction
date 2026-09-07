@@ -1,15 +1,9 @@
 """
-Evaluate BEC-Pred's label_assigner.py output (reaction_id, Prediction --
-single-label classifier, one EC class string per reaction) against the Rhea
-Stratified test split's ground truth, computing the same weighted
-MCC/precision/recall metrics used elsewhere in this repo (see
-methods/SIMMER/SIMMER_scripts/evaluate_rhea_nocofactor.py), per EC class with
-class 1 (oxidoreductases) reported first/separately.
+Evaluates BEC-Pred's label_assigner.py output against the Rhea Stratified
+test split's ground truth: weighted MCC/precision/recall per EC class, class
+1 (oxidoreductases) reported first.
 
-BEC-Pred is single-label (unlike SIMMER/SelenzymeRF's ranked multi-EC
-output), so pred_set is at most one EC per reaction -- MultiLabelBinarizer
-still applies cleanly since true_set can itself hold >1 label (multi-label
-ground truth rows, if any survive after cofactor stripping).
+BEC-Pred is single-label, so pred_set holds at most one EC per reaction.
 """
 
 import argparse

@@ -1,34 +1,19 @@
 """
-Rebuild master.tsv from raw Rhea distribution files, replacing the previous
-SMILES-reversal heuristic (dedup_reversible.py applied after the fact to an
-inherited, undocumented master.tsv).
+Rebuilds master.tsv from raw Rhea distribution files, replacing the previous
+SMILES-reversal heuristic (dedup_reversible.py).
 
-Rhea assigns 4 RHEA IDs to every unique chemical transformation: an
-undirected MASTER id, plus LR (forward), RL (reverse) and BI (bidirectional)
-variants -- so a naive parse of rhea-reaction-smiles.tsv carries every
-transformation twice (once as LR, once as RL). EC numbers are annotated only
-once per MASTER id (rhea2ec.tsv, DIRECTION == UN). This script uses
-rhea-directions.tsv (Rhea's own master/LR/RL/BI grouping) to collapse each
-transformation to exactly one row -- keyed by the MASTER id's EC and the LR
-id's SMILES (LR chosen arbitrarily but consistently as "the" direction) --
-so no reaction appears twice and no SMILES-matching heuristic is needed.
+Rhea assigns 4 IDs per transformation (undirected MASTER, plus LR/RL/BI
+directional variants), so a naive parse double-counts every reaction. Uses
+rhea-directions.tsv's master/LR/RL/BI grouping to collapse each to one row,
+keyed by the MASTER id's EC and the LR id's SMILES.
 
-Masters with more than one distinct EC (e.g. broad-specificity enzymes, 229
-of them) are NOT dropped: each is written as multiple rows in master.tsv --
-same REACTION_ID and REACTION_SMILES, one row per EC -- so the reaction is
-represented once per label rather than once per label removed. These
-REACTION_IDs are also listed in master_multi_ec_reactions.tsv so downstream
-split scripts can group them together if they want to avoid the same
-reaction landing in both train and test under different EC rows.
-
-Masters with no SMILES (LR id has no entry in rhea-reaction-smiles.tsv --
-usually generic/macromolecule reactions Rhea encodes without a concrete
-SMILES) are excluded and written to master_excluded_no_smiles.tsv instead of
-being silently dropped.
+Masters with more than one EC (229 of them) are kept as multiple rows (same
+REACTION_ID/REACTION_SMILES, one per EC) and also listed in
+master_multi_ec_reactions.tsv. Masters with no SMILES are excluded and
+written to master_excluded_no_smiles.tsv instead of being dropped silently.
 
 Writes data/Splits-Rhea/master.tsv with columns REACTION_ID, REACTION_SMILES,
-EC_NUMBER (REACTION_ID is the LR id, matching the existing repo convention --
-verified against the previous master.tsv, whose REACTION_ID values are LR ids).
+EC_NUMBER (REACTION_ID is the LR id).
 """
 
 import argparse
