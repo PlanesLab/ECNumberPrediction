@@ -23,6 +23,7 @@ Specifically, we assessed the tools under three conditions:
 - [Installation](#installation)
 - [Included Tools](#included-tools)
 - [Database Composition](#database-composition)
+  - [Data Splitting](#data-splitting)
   - [SMILES Processing](#smiles-processing)
   - [E-zyme / E-zyme2](#e-zyme--e-zyme2)
   - [BridgIT](#bridgit)
@@ -122,6 +123,28 @@ Each method in the `methods/` folder may have its own installation requirements.
 | **Rhea** | 2025 snapshot (Expasy `ftp.expasy.org/databases/rhea/tsv/`, downloaded 2026-08-14) | 7,316 | 2,532 | 2,301 | 967 | 834 | 337 | 267 | 78 |
 | **MetaCyc** | not recorded (bundled with SIMMER's upstream reference DB, `methods/SIMMER/SIMMER_code/SIMMER/SIMMER_files/chem_data/`) | 6,444 | 2,213 | 1,830 | 931 | 864 | 505 | 99 | 2 |
 
+### Data Splitting
+
+Three ways to split reaction data into train/test, used to build the Rhea splits for [Case 2](#case-2) (`data/Splits-Rhea/scripts/`, run against `data/Splits-Rhea/master.tsv`):
+
+- **Stratified** — random split, balanced by EC subsubclass.
+- **Scaffold** — split by Bemis-Murcko scaffold within each EC subsubclass, so structurally similar reactions don't leak across train/test.
+- **Time** — trains on an older database snapshot, tests on reactions new to the current one.
+
+```bash
+python3 data/Splits-Rhea/scripts/stratified_split.py \
+  --input data/Splits-Rhea/master.tsv --output_dir data/Splits-Rhea/Stratified --seed 42
+
+python3 data/Splits-Rhea/scripts/scaffold_split.py \
+  --input data/Splits-Rhea/master.tsv --output_dir data/Splits-Rhea/Scaffold --seed 42
+
+python3 data/Splits-Rhea/scripts/time_split.py \
+  --old_db data/Splits-Rhea/old_ids_reconstructed.tsv \
+  --new_db data/Splits-Rhea/master.tsv \
+  --output_dir data/Splits-Rhea/Time
+```
+
+Each writes `train.tsv`/`test.tsv` to `--output_dir`. All three keep every EC row of a multi-EC reaction on the same side of the split. `--seed` (default 42) is what varies across the `seed_splits/seed{0,1,2}/` reruns used for the [Rhea Splits Comparison](#case-2).
 
 ### SMILES Processing
 
