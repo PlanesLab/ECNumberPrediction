@@ -144,6 +144,7 @@ python3 data/Splits-Rhea/scripts/time_split.py \
   --output_dir data/Splits-Rhea/Time
 ```
 
+
 Each writes `train.tsv`/`test.tsv` to `--output_dir`. All three keep every EC row of a multi-EC reaction on the same side of the split. `--seed` (default 42) is what varies across the `seed_splits/seed{0,1,2}/` reruns used for the [Rhea Splits Comparison](#case-2).
 
 ### SMILES Processing
