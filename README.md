@@ -45,8 +45,6 @@ For more information, please refer to:
   
 ## Cite
 
-If you use this repository, please cite it — see [`CITATION.cff`](CITATION.cff) for citation metadata (BibTeX/APA export available via GitHub's "Cite this repository" button).
-
 ## License
 
 [MIT](LICENSE)
@@ -70,7 +68,6 @@ ECNumberPrediction/
 │   ├── Case2
 │   ├── CaseStudy
 │   └── MajorityVote
-├── CITATION.cff
 ├── LICENSE
 └── README.md
 ```
