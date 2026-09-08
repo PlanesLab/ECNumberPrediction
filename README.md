@@ -1,4 +1,4 @@
-# A Systematic Review of EC Number Prediction Algorithms Based on Reaction Chemical Structures
+# EC Number Prediction
 
 **v1.0.0** · [MIT License](LICENSE) · Josefina Arcagni, Telmo Blasco (University of Navarra)
 
