@@ -16,6 +16,7 @@ library(stringr)
 library(cowplot)
 
 ROOT <- "/scratch/jarcagniriv/ECNumberPrediction"
+OUT_ROOT <- "/scratch/jarcagniriv/ECNumberPrediction/results"
 
 # ============================================================
 # Global settings (unchanged from metrics-case1.R, + MajorityVoteCore4)
@@ -23,7 +24,7 @@ ROOT <- "/scratch/jarcagniriv/ECNumberPrediction"
 
 method_order <- c(
   "E-zyme1", "E-zyme2", "BridgIT", "SelenzymeRF",
-  "SIMMER", "Theia", "BEC-Pred", "CLAIRE", "MV"
+  "SIMMER", "Theia", "BEC-Pred", "MV"
 )
 
 method_colors <- c(
@@ -34,7 +35,6 @@ method_colors <- c(
   "SIMMER"     = "#A6D854",
   "Theia"      = "#FFD92F",
   "BEC-Pred"   = "#0066FF",
-  "CLAIRE"     = "#B3B3B3",
   "MV"         = "#9B30FF"
 )
 
@@ -61,7 +61,7 @@ metric_sd_lookup <- c(Coverage = "coverage_std", MCC = "mcc_std",
 metric_colors <- c("Coverage" = "#66c2a5", "MCC" = "#C26683",
                     "Precision" = "#B1C266", "Recall" = "#fc8d62")
 
-data_summary <- read_csv(file.path(ROOT, "results/Case1/kegg500_bootstrap_analysis/kegg500_bootstrap_summary.csv"),
+data_summary <- read_csv(file.path(OUT_ROOT, "Case1/kegg500_bootstrap_analysis/kegg500_bootstrap_summary.csv"),
                           show_col_types = FALSE) %>%
   mutate(method = recode(method, "MajorityVoteCore4" = "MV")) %>%
   mutate(method = factor(method, levels = method_order)) %>%
@@ -107,7 +107,7 @@ panel_a <- ggplot(summary_metrics, aes(x = method, y = value, fill = metric)) +
 # laid out as a 3x3 grid (ncol=3) for the 9 methods.
 # ============================================================
 
-data_class <- read_csv(file.path(ROOT, "results/Case1/kegg500_bootstrap_analysis/kegg500_bootstrap_class_metrics_summary.csv"),
+data_class <- read_csv(file.path(OUT_ROOT, "Case1/kegg500_bootstrap_analysis/kegg500_bootstrap_class_metrics_summary.csv"),
                         show_col_types = FALSE) %>%
   mutate(
     method = recode(method, "MajorityVoteCore4" = "MV"),
@@ -120,7 +120,7 @@ panel_b <- ggplot(data_class, aes(x = ec_class_name, y = mcc_mean, fill = ec_cla
   geom_bar(stat = "identity") +
   geom_errorbar(aes(ymin = pmax(0, mcc_mean - mcc_std), ymax = pmin(1, mcc_mean + mcc_std)),
                 width = 0.4, linewidth = 0.4) +
-  facet_wrap(~ method, ncol = 3) +
+  facet_wrap(~ method, ncol = 4) +
   scale_fill_manual(values = class_colors, name = NULL) +
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
   labs(y = "MCC") +
@@ -145,7 +145,7 @@ seed_files <- file.path(ROOT, sprintf("results/Case1/kegg500_bootstrap/seed%d_me
 data_topn <- do.call(rbind, lapply(seed_files, read.csv, stringsAsFactors = FALSE))
 
 method_cols <- c("E.zyme1", "E.zyme2", "BridgIT", "SelenzymeRF", "SIMMER", "Theia",
-                  "BEC.Pred", "CLAIRE", "MajorityVoteCore4")
+                  "BEC.Pred", "MajorityVoteCore4")
 
 extract_subclass <- function(x) {
   if (is.null(x) || length(x) != 1 || is.na(x) || x == "") return(character(0))
@@ -252,12 +252,12 @@ final_plot <- plot_grid(
   label_y = 1,
   hjust = 0,
   vjust = c(1.05, 1.05, 1.1),
-  rel_heights = c(0.36, 0.44, 0.28)
+  rel_heights = c(0.36, 0.293, 0.28)
 )
 
 ggsave(
-  file.path(ROOT, "results/Case1/Figures/kegg500_bootstrap_fig1_full.jpg"),
-  final_plot, width = 30, height = 38, dpi = 300, bg = "white", limitsize = FALSE
+  file.path(OUT_ROOT, "Case1/Figures/kegg500_bootstrap_fig1_full.jpg"),
+  final_plot, width = 30, height = 32.85, dpi = 300, bg = "white", limitsize = FALSE
 )
 
-cat("Saved to results/Case1/Figures/kegg500_bootstrap_fig1_full.jpg\n")
+cat("Saved to Case1/Figures/kegg500_bootstrap_fig1_full.jpg\n")

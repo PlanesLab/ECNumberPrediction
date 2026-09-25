@@ -121,7 +121,7 @@ fi
 # header comment), pointed at each seed's data/Splits-Rhea/{Scaffold,Stratified}/seed_splits/
 # seed${SEED}/{train,test}.tsv instead of the un-seeded Stratified-only baseline files.
 # These raw Rhea files use uppercase REACTION_ID/REACTION_SMILES/EC_NUMBER columns directly --
-# no lowercase-renamed prepared/ copy needed here (unlike BEC-Pred/Theia/CLAIRE above).
+# no lowercase-renamed prepared/ copy needed here (unlike BEC-Pred/Theia above).
 # RHEA_SPLIT selects which split(s) to run (space-separated "Scaffold"/"Stratified"); defaults to
 # both if unset.
 RHEA_SPLITS="${RHEA_SPLIT:-Scaffold Stratified}"

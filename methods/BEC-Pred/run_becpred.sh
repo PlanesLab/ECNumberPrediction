@@ -41,7 +41,7 @@ SEED="${SEED:-42}"
 
 # SKIP_CASE1/SKIP_METANETX/SKIP_CASESTUDY let a submission scope itself to only the Rhea-splits
 # Case 2 block below (e.g. for a Rhea-only bootstrap run) without paying for a redundant KEGG
-# eval, MetaNetX retrain, or CaseStudy eval every seed. Same convention as Theia/CLAIRE's
+# eval, MetaNetX retrain, or CaseStudy eval every seed. Same convention as Theia's
 # existing SKIP_CASE1. Default 0 (run everything) for backward compatibility.
 SKIP_CASE1="${SKIP_CASE1:-0}"
 SKIP_METANETX="${SKIP_METANETX:-0}"

@@ -157,7 +157,7 @@ check_hit_with_pipes_fractional <- function(prediction, true_prefix) {
 }
 
 # === Prepare data ===
-ec_methods <- c("E-zyme1","E-zyme2", "BridgIT", "SelenzymeRF","SIMMER", "Theia" ,"BEC-Pred","CLAIRE")
+ec_methods <- c("E-zyme1","E-zyme2", "BridgIT", "SelenzymeRF","SIMMER", "Theia" ,"BEC-Pred")
 df <- df %>% rowwise() %>% mutate(across(all_of(ec_methods), ~ collapse_to_third_level(.x))) %>% ungroup()
 
 # === Majority vote (Top-1 and Top-5, with fractional hits) -- computed here
@@ -462,10 +462,11 @@ top1_barplot_with_majority <- ggplot(top1_plus_majority, aes(y = n, x = method, 
 final_plot <- plot_grid(annotation_plot, heatmap, ncol = 2, rel_widths = c(0.5, 4),
                          align = "h", axis = "tb")
 final_plot <- ggdraw(final_plot) + theme(plot.margin = margin(t = 30, r = 10, b = 10, l = 10))
+final_plot_narrow <- plot_grid(final_plot, NULL, ncol = 2, rel_widths = c(0.82, 0.18))
 
 ggarranged_combined_plot <- plot_grid(
-  final_plot,
-  top1_barplot_with_majority + theme(plot.margin = margin(t = 30, r = 0, b = 10, l = 50)),
+  final_plot_narrow,
+  top1_barplot_with_majority + theme(plot.margin = margin(t = 30, r = 80, b = 10, l = 50)),
   labels = c("A", "B"),
   label_size = 24,
   label_fontface = "bold",
@@ -481,11 +482,25 @@ print(ggarranged_combined_plot)
 ggsave(
   filename = "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/casestudyplot_final.jpg",
   plot = ggarranged_combined_plot,
-  width = 10,
+  width = 12,
   height = 15,
   dpi = 300,
   bg= "white"
 )
+
+# Panel A's inset (rel_widths above) leaves blank margin on the right that
+# panel B doesn't need as much of; crop down to just past B's real content
+# (its legend text) rather than rescaling the whole canvas, which would
+# shrink the actual plot content instead of just trimming empty space.
+system2("python3", c("-c", shQuote(paste0(
+  "from PIL import Image; ",
+  "img = Image.open('/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/casestudyplot_final.jpg').convert('RGB'); ",
+  "import numpy as np; arr = np.array(img); ",
+  "nonwhite = np.any(arr < 250, axis=2); ",
+  "last_col = int(np.max(np.where(nonwhite.any(axis=0)))); ",
+  "crop_right = min(img.width, last_col + 40); ",
+  "img.crop((0, 0, crop_right, img.height)).save('/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/casestudyplot_final.jpg', quality=95)"
+))))
 
 # === Save Majority Vote Table (only if included) ===
 if (include_majority_vote) {
@@ -499,7 +514,7 @@ if (include_majority_vote) {
            majority_hit_type_top5)
   
   write_csv(
-    majority_table, 
+    majority_table,
     "/scratch/jarcagniriv/ECNumberPrediction/results/CaseStudy/majority_vote_results_final.csv"
   )
 }

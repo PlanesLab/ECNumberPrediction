@@ -15,7 +15,7 @@ library(scales)
 
 method_order <- c(
   "E-zyme1", "E-zyme2", "BridgIT", "SelenzymeRF",
-  "SIMMER", "Theia", "BEC-Pred", "CLAIRE"
+  "SIMMER", "Theia", "BEC-Pred"
 )
 
 method_colors <- c(
@@ -25,8 +25,7 @@ method_colors <- c(
   "SelenzymeRF"= "#E78AC3",
   "SIMMER"     = "#A6D854",
   "Theia"      = "#FFD92F",
-  "BEC-Pred"   = "#E5C494",
-  "CLAIRE"     = "#B3B3B3"
+  "BEC-Pred"   = "#E5C494"
 )
 
 ec_class_names <- c(
@@ -72,7 +71,7 @@ metric_colors <- c(
 # ============================================================
 
 data_eval <- read_csv(
-  "/Users/josefinaarcagni/Downloads/evaluation_summary_case1.csv",
+  "results/Case1/evaluation_summary.csv",
   show_col_types = FALSE
 ) %>%
   mutate(
@@ -83,7 +82,7 @@ data_eval <- read_csv(
   filter(!is.na(ec_class_name))
 
 data_topn <- read.csv(
-  "/Users/josefinaarcagni/Downloads/merged_output_case1.csv",
+  "results/Case1/merged_output.csv",
   stringsAsFactors = FALSE
 )
 
@@ -164,7 +163,7 @@ panel_b <- plot_grid(
 
 method_cols <- c(
   "E.zyme1", "E.zyme2", "BridgIT", "SelenzymeRF",
-  "SIMMER", "Theia", "BEC.Pred", "CLAIRE"
+  "SIMMER", "Theia", "BEC.Pred"
 )
 
 extract_subclass <- function(x) {
@@ -173,42 +172,42 @@ extract_subclass <- function(x) {
 }
 
 calculate_precision_recall <- function(data, methods, max_top_n = 5) {
-  
+
   out <- list()
-  
+
   for (m in methods) {
-    
+
     # Find max number of predictions available for this method
     actual_max_n <- max(sapply(data[[m]], function(x) {
       if (is.na(x) || x == "") return(0)
       length(unlist(strsplit(x, ";")))
     }), na.rm = TRUE)
-    
+
     for (n in seq_len(min(actual_max_n, max_top_n))) {
-      
+
       pr <- rr <- numeric()
-      
+
       for (i in seq_len(nrow(data))) {
-        
+
         true <- extract_subclass(data$EC.Number[i])
         if (length(true) == 0) next
-        
+
         all_preds <- unlist(strsplit(data[[m]][i], ";"))
         if (length(all_preds) < n) next
-        
+
         preds <- unique(unlist(lapply(head(all_preds, n), function(pred) {
           unlist(lapply(unlist(strsplit(pred, "\\|")), extract_subclass))
         })))
         preds <- preds[!is.na(preds)]
-        
+
         TP <- sum(preds %in% true)
         FP <- sum(!preds %in% true)
         FN <- sum(!true %in% preds)
-        
+
         pr <- c(pr, ifelse(TP + FP > 0, TP / (TP + FP), 0))
         rr <- c(rr, ifelse(TP + FN > 0, TP / (TP + FN), 0))
       }
-      
+
       out[[length(out) + 1]] <- data.frame(
         method      = m,
         top_n       = n,
@@ -217,7 +216,7 @@ calculate_precision_recall <- function(data, methods, max_top_n = 5) {
       )
     }
   }
-  
+
   bind_rows(out) %>%
     mutate(
       method = recode(method,
@@ -288,7 +287,7 @@ final_plot <- plot_grid(
 )
 
 ggsave(
-  "/Users/josefinaarcagni/Documents/ECMethods/FinalGraphs/Case1/fig1_kegg.jpg",
+  "/scratch/jarcagniriv/ECNumberPrediction/results/Case1/Figures/fig1_kegg.jpg",
   final_plot,
   width  = 20,
   height = 22,

@@ -12,8 +12,8 @@ This repository contains the code and data used to evaluate computational tools 
 
 
 Specifically, we assessed the tools under three conditions: 
-1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — using 20% of the KEGG 2025 database (1866 reactions). To check robustness to which reactions get sampled, this KEGG evaluation was additionally re-run on **10 independently resampled draws of 500 reactions each** ("seeds" 0–9). We also evaluated these using a subset of 500 Rhea 2025 reactions.
-2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia), [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) and [CLAIRE](https://github.com/zishuozeng/CLAIRE) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. The **Stratified** and **Scaffold** splits were each re-run across **3 random seeds** to check sensitivity to the particular train/test partition drawn; the **Time** split is a single deterministic chronological split. We trained the models with the training dataset and tested with the test set for each split. Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
+1. We evaluated all selected methods — [E-zyme](https://www.genome.jp/tools/e-zyme/), [E-zyme2](https://www.genome.jp/tools/e-zyme2/), [BridgIT](https://lcsb-databases.epfl.ch/Bridgit), [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) — using 20% of the KEGG 2025 database (1866 reactions). To check robustness to which reactions get sampled, this KEGG evaluation was additionally re-run on **10 independently resampled draws of 500 reactions each** ("seeds" 0–9). We also evaluated these using a subset of 500 Rhea 2025 reactions.
+2. For all of the methods with available source code — [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred) — we evaluated them using three different data splits of the Rhea 2025 dataset: Stratified random split, Time-based split and Scaffold-aware split. The **Stratified** and **Scaffold** splits were each re-run across **3 random seeds** to check sensitivity to the particular train/test partition drawn; the **Time** split is a single deterministic chronological split. We trained the models with the training dataset and tested with the test set for each split. Additionally, we trained or used as prior knowledge 90% of the MetaNetX/KEGG/ECREACT/Rhea databases, and then queried the methods with the remaining 10%. All mentioned splits are included in `data`.
 3. We did a case study on 28 drugs and their associated enzyme-annotated degradation reactions, and used them to query against all selected methods. Additionally, we applied a Top1 and Top5 **majority voting strategy** using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred), to show the potential of combining multiple algorithms to correctly predict EC number. 
 
 ### Table of Contents: 
@@ -31,7 +31,6 @@ Specifically, we assessed the tools under three conditions:
   - [SIMMER](#simmer)
   - [Theia](#theia)
   - [BEC-Pred](#bec-pred)
-  - [CLAIRE](#claire)
 - [Results](#results)
   - [Case 1](#case-1)
   - [Case 2](#case-2)
@@ -60,7 +59,6 @@ ECNumberPrediction/
 ├── methods/         # Implemented EC number prediction methods
 │   ├── BEC-Pred
 │   ├── BridgIT
-│   ├── CLAIRE
 │   ├── E-zyme
 │   ├── SelenzymeRF
 │   ├── SIMMER
@@ -109,7 +107,6 @@ Each method in the `methods/` folder may have its own installation requirements.
 | **SIMMER**     | 2023     | SB       | MetaCyc          | Atom-Pair fingerprints, Tanimoto score, enrichment analysis                                            | [Yes (GitHub)](https://github.com/aebustion/SIMMER)         |
 | **Theia**      | 2023     | ML       | ECREACT / Rhea   | MLP, differential reaction fingerprints                                     | [Yes (GitHub)](https://github.com/daenuprobst/theia)         |
 | **BEC-Pred**   | 2024     | ML       | USPTO-ECREACT    | BERT, transfer learning                                                                                | [Yes (GitHub)](https://github.com/KeeliaQWJ/BEC-Pred)         |
-| **CLAIRE**     | 2025     | ML       | ECREACT          | Contrastive learning, rxnfp embeddings, differential reaction fingerprints                             | [Yes (GitHub)](https://github.com/zishuozeng/CLAIRE)         |
 
 *The table above summarizes the tools used, detailing their year of release, type (SB: similarity-based or ML: machine learning), associated databases, key features, and availability of open-source code.*
 
@@ -367,50 +364,20 @@ bash methods/BEC-Pred/run_becpred.sh
 
 Runs all cases; output as `BEC-Pred.csv`.
 
-### CLAIRE
-
-*Requirements:* 1 GPU and 128G memory for training and evaluating the model.
-
-1. Create conda environments:
-```bash
-conda env create -f methods/CLAIRE/claire_env.yml
-# activate when using CLAIRE tools
-conda activate claire_env
-
-conda env create -f methods/CLAIRE/rxnfp_env.yml
-# activate when using rxnfp utilities
-conda activate rxnfp_env
-```
-
-2. Clone repository & download data:
-```bash
-git clone https://github.com/zishuozeng/CLAIRE.git methods/CLAIRE/CLAIRE_code
-cd methods/CLAIRE/CLAIRE_code
-```
-Notes: Import or unzip any reference datasets required by CLAIRE as indicated in the upstream repository. Do not remove or modify the modified scripts included in `methods/CLAIRE/CLAIRE_code/` that are needed to run the cases.
-
-3. Make runner executable and run:
-```bash
-chmod +x methods/CLAIRE/run_claire.sh
-bash methods/CLAIRE/run_claire.sh
-```
-
-Runs the configured cases; output as `CLAIRE.csv`.
-
 ## Results
 
 Results are organized in subfolders inside `results/`:
 
 - `results/Case1/` – Results for the first evaluation case (queried all methods with their original dataset tested with KEGG reaction queries).
 
-- `results/Case2/` – Results for the second evaluation case (five open-source methods trained and tested on different datasets and data splits).
+- `results/Case2/` – Results for the second evaluation case (four open-source methods trained and tested on different datasets and data splits).
 
 - `results/CaseStudy/` – Results for the Case Study (queries all methods with their original dataset using 28 drug-associated reactions).
 
 - `results/MajorityVote/` – Top1 and Top5 majority voting strategies using [SelenzymeRF](https://github.com/synbiochem/selenzyme/tree/SelenzymeRF), [SIMMER](https://github.com/aebustion/SIMMER), [Theia](https://github.com/daenuprobst/theia) and [BEC-Pred](https://github.com/KeeliaQWJ/BEC-Pred). 
 
 
-- `results/Case1/kegg500_bootstrap_analysis/` – per-seed metrics and figures for the per-seed KEGG-500 bootstrap re-run (10 fresh 500-reaction samples, all 8 methods), including a precomputed pairwise significance comparison. See [KEGG-500 Bootstrap Analysis & Statistical Significance](#kegg-500-bootstrap-analysis--statistical-significance).
+- `results/Case1/kegg500_bootstrap_analysis/` – per-seed metrics and figures for the per-seed KEGG-500 bootstrap re-run (10 fresh 500-reaction samples, all 7 methods), including a precomputed pairwise significance comparison. See [KEGG-500 Bootstrap Analysis & Statistical Significance](#kegg-500-bootstrap-analysis--statistical-significance).
 - `results/Case1/kegg500_bootstrap_full_coverage/` – the same 10 seeds re-scored on a "full coverage" subset (only reactions where all 8 methods returned a prediction), so Coverage differences can't drive the MCC/Precision/Recall comparison.
 - `results/Case2/results-splits/` – per-seed, per-split raw predictions and aggregated metrics for the Rhea Stratified/Time/Scaffold split comparison. See [Rhea Splits Comparison](#rhea-splits-comparison).
 - `results/Case2/OxidoreductaseStudy/` – the cofactor-stripping (no-cofactor) study for SIMMER and BEC-Pred. See [Cofactor-Stripping Study](#cofactor-stripping-study).
@@ -446,7 +413,7 @@ Output: `results/Case1/bootstrap_metrics.csv` (per-seed, per-method) and `result
 
 #### KEGG-500 Bootstrap Analysis & Statistical Significance
 
-A sturdier check than step 4: Case 1 re-run on **10 freshly-resampled 500-reaction draws** ("seeds" 0–9) instead of one fixed split, all 8 methods.
+A sturdier check than step 4: Case 1 re-run on **10 freshly-resampled 500-reaction draws** ("seeds" 0–9) instead of one fixed split, all 7 methods.
 
 - `results/Case1/kegg500_bootstrap/` – per-seed merged predictions.
 - `results/Case1/kegg500_bootstrap_full_coverage/` – same seeds, restricted to reactions all 8 methods answered (isolates accuracy from coverage differences).
@@ -462,7 +429,7 @@ Rscript results/Case1/kegg500_bootstrap_analysis/full_figure_kegg500_bootstrap_f
 ```bash
 python3 results/Case2/join_results.py \
   --predictions_dir results/Case2/results-metanetx \
-  --methods BEC-Pred CLAIRE SelenzymeRF SIMMER Theia \
+  --methods BEC-Pred SelenzymeRF SIMMER Theia \
   --ground_truth_csv data/Splits-DBs/MetaNetX/test.tsv \
   --output results/Case2/merged_output.csv
 ```
@@ -481,7 +448,7 @@ Output: `results/Case2/case2_plot.png`
 
 #### Rhea Splits Comparison
 
-The 5 open-source methods (SelenzymeRF, SIMMER, Theia, BEC-Pred, CLAIRE) were also compared across three ways of splitting Rhea 2025 into train/test (`data/Splits-Rhea/{Stratified,Time,Scaffold}/`): **Stratified** (random), **Time-based** (train on older reactions, test on newer) and **Scaffold-aware** (test reactions structurally unlike train). Stratified and Scaffold were each re-run across **3 seeds** to check sensitivity to the partition drawn; Time is a single deterministic split.
+The 4 open-source methods (SelenzymeRF, SIMMER, Theia, BEC-Pred) were also compared across three ways of splitting Rhea 2025 into train/test (`data/Splits-Rhea/{Stratified,Time,Scaffold}/`): **Stratified** (random), **Time-based** (train on older reactions, test on newer) and **Scaffold-aware** (test reactions structurally unlike train). Stratified and Scaffold were each re-run across **3 seeds** to check sensitivity to the partition drawn; Time is a single deterministic split.
 
 - `results/Case2/results-splits/seed_runs/` – per-method predictions, ground truth, and merged outputs for each split/seed.
 - `results/Case2/results-splits/seed_summary.py` → `seed_summary.csv` – aggregated per-split, per-method metrics (mean ± std across seeds).
@@ -508,7 +475,7 @@ Rscript results/CaseStudy/case_study_heatmap.R
 ```
 Output: `results/CaseStudy/casestudyplot_final.jpg` (two panels — see below) and `results/CaseStudy/majority_vote_results_final.csv`. Requires R ≥ 4.4 with `ggplot2`, `dplyr`, `tidyr`, `readr`, `stringr`, `cowplot`, `RColorBrewer`, `tibble`, `purrr`, `readxl`.
 
-**Panel A** is a per-drug heatmap: rows are the 28 drugs (ordered by true EC), columns are the 8 methods plus **MV-1**/**MV-5** — a Top-1/Top-5 majority vote across SelenzymeRF, SIMMER, Theia and BEC-Pred, computed inline in this script — colored by hit type (`Top 1` / `Top 5` / `No hit` / `No prediction`), with a left-hand color strip grouping drugs by EC subsubclass. **Panel B** is a stacked bar chart of each method's (+ MV-1/MV-5's) Top-1 hit count, broken down by true EC class.
+**Panel A** is a per-drug heatmap: rows are the 28 drugs (ordered by true EC), columns are the 7 methods plus **MV-1**/**MV-5** — a Top-1/Top-5 majority vote across SelenzymeRF, SIMMER, Theia and BEC-Pred, computed inline in this script — colored by hit type (`Top 1` / `Top 5` / `No hit` / `No prediction`), with a left-hand color strip grouping drugs by EC subsubclass. **Panel B** is a stacked bar chart of each method's (+ MV-1/MV-5's) Top-1 hit count, broken down by true EC class.
 
 
 ### MajorityVote 

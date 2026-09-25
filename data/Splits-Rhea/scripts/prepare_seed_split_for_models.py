@@ -1,7 +1,7 @@
 """
 Renames a Rhea seed split file (uppercase REACTION_ID/REACTION_SMILES/EC_NUMBER)
 to the lowercase MetaNetX-style schema (reaction_id, reaction_smiles, rxn, ec)
-that BEC-Pred/Theia/CLAIRE hardcode column names for. Optionally emits a
+that BEC-Pred/Theia hardcode column names for. Optionally emits a
 queries.txt alongside it.
 
 SIMMER takes column names as CLI flags and reads the raw uppercase files

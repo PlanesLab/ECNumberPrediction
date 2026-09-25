@@ -1,0 +1,10 @@
+database,split,n_unique_reactions,"n_unique_(smiles,ec)_pairs",n_ec_labels_exploded,Oxidoreductases_count,Oxidoreductases_pct,Transferases_count,Transferases_pct,Hydrolases_count,Hydrolases_pct,Lyases_count,Lyases_pct,Isomerases_count,Isomerases_pct,Ligases_count,Ligases_pct,Translocases_count,Translocases_pct
+MetaNetX,train,30366,31881,39251,15740,40.1,10863,27.68,7673,19.55,2458,6.26,882,2.25,1392,3.55,243,0.62
+MetaNetX,test,3617,3719,4504,1887,41.9,1275,28.31,805,17.87,259,5.75,112,2.49,144,3.2,22,0.49
+MetaNetX,train+test,33546,35249,43397,17470,40.26,12031,27.72,8404,19.37,2715,6.26,992,2.29,1520,3.5,265,0.61
+KEGG,train,6729,6923,7694,2668,34.68,2434,31.64,1154,15.0,816,10.61,311,4.04,295,3.83,16,0.21
+KEGG,test,776,779,851,299,35.14,261,30.67,123,14.45,94,11.05,40,4.7,33,3.88,1,0.12
+KEGG,train+test,7448,7685,8528,2961,34.72,2690,31.54,1275,14.95,909,10.66,348,4.08,328,3.85,17,0.2
+ECREACT,train,50979,51980,51980,12344,23.75,28970,55.73,4915,9.46,3275,6.3,1084,2.09,1166,2.24,226,0.43
+ECREACT,test,12027,12108,12108,2965,24.49,6578,54.33,1214,10.03,763,6.3,258,2.13,276,2.28,54,0.45
+ECREACT,train+test,56279,57464,57464,13584,23.64,32123,55.9,5429,9.45,3604,6.27,1194,2.08,1280,2.23,250,0.44

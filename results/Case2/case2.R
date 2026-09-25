@@ -42,7 +42,7 @@ data_eval <- data_eval %>%
   )
 
 # Methods & metrics
-method_order <- c("SelenzymeRF", "SIMMER", "Theia", "BEC-Pred", "CLAIRE")
+method_order <- c("SelenzymeRF", "SIMMER", "Theia", "BEC-Pred")
 
 metric_labels <- c(
   "coverage" = "Coverage",
@@ -62,8 +62,7 @@ method_colors_c <- c(
   "SelenzymeRF" = "#E78AC3",
   "SIMMER"      = "#A6D854",
   "Theia"       = "#FFD92F",
-  "BEC-Pred"    = "#E5C494",
-  "CLAIRE"      = "#B3B3B3"
+  "BEC-Pred"    = "#E5C494"
 )
 
 # ================================ #

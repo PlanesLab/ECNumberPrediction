@@ -15,7 +15,7 @@ from sklearn.metrics import matthews_corrcoef, precision_score, recall_score
 from sklearn.preprocessing import MultiLabelBinarizer
 
 PREDICTION_COLS = [
-    'E-zyme1', 'E-zyme2', 'BridgIT', 'SelenzymeRF', 'SIMMER', 'Theia', 'BEC-Pred', 'CLAIRE',
+    'E-zyme1', 'E-zyme2', 'BridgIT', 'SelenzymeRF', 'SIMMER', 'Theia', 'BEC-Pred',
 ]
 
 

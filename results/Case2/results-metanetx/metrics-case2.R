@@ -12,7 +12,7 @@ library(cowplot)
 # Data Preparation
 # ================================ #
 # Read evaluation summary
-data_eval <- read_csv("results/Case2/evaluation_summary.csv")
+data_eval <- read_csv("results/Case2/results-metanetx/evaluation_summary_metanetx.csv")
 
 # EC class names & colors
 ec_class_names <- c(
@@ -42,7 +42,7 @@ data_eval <- data_eval %>%
   )
 
 # Methods & metrics
-method_order <- c("SelenzymeRF", "SIMMER", "Theia", "BEC-Pred", "CLAIRE")
+method_order <- c("SelenzymeRF", "SIMMER", "Theia", "BEC-Pred")
 
 metric_labels <- c(
   "coverage" = "Coverage",
@@ -62,8 +62,7 @@ method_colors_c <- c(
   "SelenzymeRF" = "#E78AC3",
   "SIMMER"      = "#A6D854",
   "Theia"       = "#FFD92F",
-  "BEC-Pred"    = "#E5C494",
-  "CLAIRE"      = "#B3B3B3"
+  "BEC-Pred"    = "#E5C494"
 )
 
 # ================================ #
@@ -170,7 +169,7 @@ final_plot_labeled <- ggdraw(final_plot_ab) +
 # Save
 # ================================ #
 ggsave(
-  filename = "results/Case2/case2_plot.png",
+  filename = "/scratch/jarcagniriv/ECNumberPrediction/results/Case2/results-metanetx/case2_plot.png",
   plot = final_plot_labeled,
   width = 18, height = 14, dpi = 300, bg = "white"
 )

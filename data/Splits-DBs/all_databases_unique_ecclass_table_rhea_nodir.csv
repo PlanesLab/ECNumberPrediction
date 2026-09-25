@@ -1,0 +1,5 @@
+database,n_rows_total,n_unique_reactions,Oxidoreductases_count,Oxidoreductases_pct,Transferases_count,Transferases_pct,Hydrolases_count,Hydrolases_pct,Lyases_count,Lyases_pct,Isomerases_count,Isomerases_pct,Ligases_count,Ligases_pct,Translocases_count,Translocases_pct
+KEGG,7780,7448,2961,34.72,2690,31.54,1275,14.95,909,10.66,348,4.08,328,3.85,17,0.2
+Rhea,15189,7316,2653,34.92,2380,31.32,1021,13.44,850,11.19,343,4.51,269,3.54,82,1.08
+MetaNetX,37829,33546,17470,40.26,12031,27.72,8404,19.37,2715,6.26,992,2.29,1520,3.5,265,0.61
+ECREACT,68420,56279,13584,23.64,32123,55.9,5429,9.45,3604,6.27,1194,2.08,1280,2.23,250,0.44

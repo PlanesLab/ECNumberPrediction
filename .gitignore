@@ -50,11 +50,6 @@ methods/BEC-Pred/BEC-Pred_code/results/
 methods/theia/theia_code/theia/models_*/
 methods/theia/theia_code/theia/DB_rhea_*.csv
 
-# CLAIRE: per-seed prediction/embedding caches and scratch dev workspace
-methods/CLAIRE/CLAIRE_code/CLAIRE/Results/
-methods/CLAIRE/CLAIRE_code/CLAIRE/dev/
-methods/CLAIRE/CLAIRE_code/CLAIRE/fps/
-
 # SelenzymeRF: per-seed/per-split server instances (full codebase copied per run)
 # and the upstream reference-data bundles they're built from
 methods/SelenzymeRF/SelenzymeRF_code/selenzyme2*/
