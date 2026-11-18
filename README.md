@@ -1,6 +1,6 @@
 # EC Number Prediction
 
-**v1.0.0** · [MIT License](LICENSE) · Josefina Arcagni, Telmo Blasco (University of Navarra)
+**v1.0.1** · [MIT License](LICENSE) · Josefina Arcagni, Telmo Blasco (University of Navarra)
 
 This repository contains the code and data accompanying the article [*A systematic review of EC number prediction algorithms based on reaction chemical structures*](https://doi.org/10.1093/bioinformatics/btag834) (Arcagni et al., *Bioinformatics*, 2026), used to evaluate computational tools for enzyme function prediction. We benchmarked multiple EC (Enzyme Commission) number prediction algorithms — spanning both **similarity-based** and **machine/deep learning** approaches — using reaction SMILES as input. The pipeline includes scripts for dataset preprocessing, tool evaluation under various conditions, performance assessment across EC hierarchy levels and classes, and visualization of results. Overall, this repository provides a reproducible and extensible framework for benchmarking EC number prediction methods and helps users identify the most suitable tool for their metabolic modeling applications.
 
