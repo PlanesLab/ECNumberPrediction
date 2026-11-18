@@ -2,7 +2,7 @@
 
 **v1.0.0** · [MIT License](LICENSE) · Josefina Arcagni, Telmo Blasco (University of Navarra)
 
-This repository contains the code and data used to evaluate computational tools for enzyme function prediction. We benchmarked multiple EC (Enzyme Commission) number prediction algorithms — spanning both **similarity-based** and **machine/deep learning** approaches — using reaction SMILES as input. The pipeline includes scripts for dataset preprocessing, tool evaluation under various conditions, performance assessment across EC hierarchy levels and classes, and visualization of results. Overall, this repository provides a reproducible and extensible framework for benchmarking EC number prediction methods and helps users identify the most suitable tool for their metabolic modeling applications.
+This repository contains the code and data accompanying the article [*A systematic review of EC number prediction algorithms based on reaction chemical structures*](https://doi.org/10.1093/bioinformatics/btag834) (Arcagni et al., *Bioinformatics*, 2026), used to evaluate computational tools for enzyme function prediction. We benchmarked multiple EC (Enzyme Commission) number prediction algorithms — spanning both **similarity-based** and **machine/deep learning** approaches — using reaction SMILES as input. The pipeline includes scripts for dataset preprocessing, tool evaluation under various conditions, performance assessment across EC hierarchy levels and classes, and visualization of results. Overall, this repository provides a reproducible and extensible framework for benchmarking EC number prediction methods and helps users identify the most suitable tool for their metabolic modeling applications.
 
 <p align="center">
   <img src="FIG1.png" alt="General pipeline of EC number prediction methodologies. A) Pipeline of similarity-based methods. B) Pipeline of machine/deep learning methods." width="600">
@@ -44,7 +44,22 @@ For more information, please refer to:
   
 ## Cite
 
-If you use this repository, please cite it — see [`CITATION.cff`](CITATION.cff) for citation metadata (BibTeX/APA export available via GitHub's "Cite this repository" button).
+If you use this repository, please cite:
+
+> Arcagni J, Carbonell P, Martin H, Planes FJ, Blasco T. A systematic review of EC number prediction algorithms based on reaction chemical structures. *Bioinformatics* (2026). https://doi.org/10.1093/bioinformatics/btag834
+
+```bibtex
+@article{arcagni2026ecprediction,
+  author  = {Arcagni, Josefina and Carbonell, Pablo and Martin, Hector and Planes, Francisco J and Blasco, Telmo},
+  title   = {A systematic review of {EC} number prediction algorithms based on reaction chemical structures},
+  journal = {Bioinformatics},
+  year    = {2026},
+  pages   = {btag834},
+  doi     = {10.1093/bioinformatics/btag834}
+}
+```
+
+Repository citation metadata is also available in [`CITATION.cff`](CITATION.cff).
 
 ## License
 
